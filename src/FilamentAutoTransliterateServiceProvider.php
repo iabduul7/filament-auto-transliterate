@@ -1,18 +1,18 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate;
+namespace Iabduul7\FilamentAutoTransliterate;
 
 use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
-use Iabduul7\FilamentAutoTranslate\Macros\TranslatableMacro;
-use Iabduul7\FilamentAutoTranslate\Services\TranslationService;
+use Iabduul7\FilamentAutoTransliterate\Macros\TranslatableMacro;
+use Iabduul7\FilamentAutoTransliterate\Services\TranslationService;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
-class FilamentAutoTranslateServiceProvider extends PackageServiceProvider
+class FilamentAutoTransliterateServiceProvider extends PackageServiceProvider
 {
-    public static string $name = 'filament-auto-translate';
+    public static string $name = 'filament-auto-transliterate';
 
     public function configurePackage(Package $package): void
     {
@@ -37,8 +37,8 @@ class FilamentAutoTranslateServiceProvider extends PackageServiceProvider
         // Compiled JS/CSS, auto-injected into every panel page. Build them with
         // `npm run build`; the prebuilt files ship in resources/dist.
         FilamentAsset::register([
-            Js::make('filament-auto-translate', __DIR__.'/../resources/dist/filament-auto-translate.js'),
-            Css::make('filament-auto-translate', __DIR__.'/../resources/dist/filament-auto-translate.css'),
-        ], package: 'iabduul7/filament-auto-translate');
+            Js::make('filament-auto-transliterate', __DIR__.'/../resources/dist/filament-auto-transliterate.js'),
+            Css::make('filament-auto-transliterate', __DIR__.'/../resources/dist/filament-auto-transliterate.css'),
+        ], package: 'iabduul7/filament-auto-transliterate');
     }
 }

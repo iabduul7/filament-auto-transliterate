@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `filament-auto-translate` will be documented in this file.
+All notable changes to `filament-auto-transliterate` will be documented in this file.
 
 ## v0.1.0 - Unreleased
 

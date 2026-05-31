@@ -1,6 +1,6 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate\Models;
+namespace Iabduul7\FilamentAutoTransliterate\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +36,7 @@ class TranslationCache extends Model
 
     public function getTable(): string
     {
-        return config('filament-auto-translate.table_name', 'translation_cache');
+        return config('filament-auto-transliterate.table_name', 'translation_cache');
     }
 
     protected static function booted(): void

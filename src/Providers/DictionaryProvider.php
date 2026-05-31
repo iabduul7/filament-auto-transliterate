@@ -1,8 +1,8 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate\Providers;
+namespace Iabduul7\FilamentAutoTransliterate\Providers;
 
-use Iabduul7\FilamentAutoTranslate\Data\TranslationResult;
+use Iabduul7\FilamentAutoTransliterate\Data\TranslationResult;
 
 /**
  * Local JSON dictionary — an offline, zero-latency glossary checked before any
@@ -20,7 +20,7 @@ class DictionaryProvider extends AbstractProvider
 
     public function isConfigured(): bool
     {
-        return $this->resolvePath(config('filament-auto-translate.target_language', 'ur')) !== null;
+        return $this->resolvePath(config('filament-auto-transliterate.target_language', 'ur')) !== null;
     }
 
     public function key(): string

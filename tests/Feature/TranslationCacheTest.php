@@ -1,6 +1,6 @@
 <?php
 
-use Iabduul7\FilamentAutoTranslate\Models\TranslationCache;
+use Iabduul7\FilamentAutoTransliterate\Models\TranslationCache;
 
 /*
 | original_text_hash is a generated column on MySQL but a plain column on other

@@ -1,6 +1,6 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate\Enums;
+namespace Iabduul7\FilamentAutoTransliterate\Enums;
 
 /**
  * The two distinct ways the package can convert input.
@@ -19,7 +19,7 @@ enum TranslationMode: string
 
     public static function default(): self
     {
-        $value = config('filament-auto-translate.mode', self::Transliterate->value);
+        $value = config('filament-auto-transliterate.mode', self::Transliterate->value);
 
         return self::tryFrom((string) $value) ?? self::Transliterate;
     }
@@ -29,6 +29,6 @@ enum TranslationMode: string
      */
     public function providersConfigKey(): string
     {
-        return "filament-auto-translate.providers.{$this->value}";
+        return "filament-auto-transliterate.providers.{$this->value}";
     }
 }

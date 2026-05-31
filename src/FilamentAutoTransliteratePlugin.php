@@ -1,12 +1,12 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate;
+namespace Iabduul7\FilamentAutoTransliterate;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 use Filament\View\PanelsRenderHook;
 
-class FilamentAutoTranslatePlugin implements Plugin
+class FilamentAutoTransliteratePlugin implements Plugin
 {
     protected bool $showToggle = true;
 
@@ -14,7 +14,7 @@ class FilamentAutoTranslatePlugin implements Plugin
 
     public function getId(): string
     {
-        return 'filament-auto-translate';
+        return 'filament-auto-transliterate';
     }
 
     public static function make(): static
@@ -63,7 +63,7 @@ class FilamentAutoTranslatePlugin implements Plugin
         if ($this->showToggle) {
             $panel->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
-                fn (): string => view('filament-auto-translate::hooks.toggle')->render(),
+                fn (): string => view('filament-auto-transliterate::hooks.toggle')->render(),
             );
         }
     }

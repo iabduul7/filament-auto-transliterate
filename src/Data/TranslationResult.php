@@ -1,6 +1,6 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate\Data;
+namespace Iabduul7\FilamentAutoTransliterate\Data;
 
 /**
  * Immutable result of a single provider attempt or a full translate() call.

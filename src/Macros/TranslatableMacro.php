@@ -1,10 +1,10 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate\Macros;
+namespace Iabduul7\FilamentAutoTransliterate\Macros;
 
 use Filament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Filament\Schemas\Components\Component;
-use Iabduul7\FilamentAutoTranslate\Enums\TranslationMode;
+use Iabduul7\FilamentAutoTransliterate\Enums\TranslationMode;
 
 class TranslatableMacro
 {
@@ -12,7 +12,7 @@ class TranslatableMacro
     {
         Component::macro('translatable', function (bool $enabled = true, TranslationMode|string|null $mode = null) {
             /** @var Component|HasExtraInputAttributes $this */
-            if (! $enabled || ! config('filament-auto-translate.enabled', true)) {
+            if (! $enabled || ! config('filament-auto-transliterate.enabled', true)) {
                 return $this;
             }
 
@@ -25,11 +25,11 @@ class TranslatableMacro
             return $this->extraInputAttributes([
                 'data-fat-translatable' => 'true',
                 'data-fat-config' => json_encode([
-                    'endpoint' => route('filament-auto-translate.translate'),
-                    'targetLang' => config('filament-auto-translate.target_language', 'ur'),
+                    'endpoint' => route('filament-auto-transliterate.translate'),
+                    'targetLang' => config('filament-auto-transliterate.target_language', 'ur'),
                     'mode' => $mode->value,
-                    'minLength' => config('filament-auto-translate.min_text_length', 2),
-                    'maxLength' => config('filament-auto-translate.max_text_length', 1000),
+                    'minLength' => config('filament-auto-transliterate.min_text_length', 2),
+                    'maxLength' => config('filament-auto-transliterate.max_text_length', 1000),
                 ]),
             ], merge: true);
         });

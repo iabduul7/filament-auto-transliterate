@@ -6,12 +6,12 @@
  * written back inline. Toggle on/off via the header button (state persists in
  * localStorage). Framework-free so it can ship as a prebuilt asset.
  */
-class FilamentAutoTranslate {
+class FilamentAutoTransliterate {
   constructor() {
     this.overlay = null;
     this.activeInput = null;
     this.wordCache = new Map();
-    this.isEnabled = localStorage.getItem('fat_enabled') === 'true';
+    this.isEnabled = localStorage.getItem("fat_enabled") === "true";
     this.isApplying = false;
     this.debug = false;
 
@@ -27,42 +27,47 @@ class FilamentAutoTranslate {
     this.createOverlay();
     this.observeInputs();
 
-    document.addEventListener('keydown', this.handleGlobalKeydown);
-    document.addEventListener('keydown', this.handleDelegatedKeydown, true);
+    document.addEventListener("keydown", this.handleGlobalKeydown);
+    document.addEventListener("keydown", this.handleDelegatedKeydown, true);
 
     // Re-scan after Livewire swaps DOM (modals, dynamic fields).
-    document.addEventListener('livewire:navigated', () => this.observeInputs());
-    const hook = () => window.Livewire?.hook?.('morph.updated', () => this.observeInputs());
+    document.addEventListener("livewire:navigated", () => this.observeInputs());
+    const hook = () =>
+      window.Livewire?.hook?.("morph.updated", () => this.observeInputs());
     if (window.Livewire) hook();
-    else document.addEventListener('livewire:init', hook, { once: true });
+    else document.addEventListener("livewire:init", hook, { once: true });
   }
 
   log(message) {
-    if (this.debug) console.info(`[FilamentAutoTranslate] ${message}`);
+    if (this.debug) console.info(`[FilamentAutoTransliterate] ${message}`);
   }
 
   createOverlay() {
-    this.overlay = document.createElement('div');
-    this.overlay.className = 'fat-overlay';
+    this.overlay = document.createElement("div");
+    this.overlay.className = "fat-overlay";
     document.body.appendChild(this.overlay);
   }
 
   observeInputs() {
-    document.querySelectorAll('[data-fat-translatable="true"]').forEach((input) => {
-      input.removeEventListener('focus', this.handleFocus);
-      input.removeEventListener('blur', this.handleBlur);
-      input.addEventListener('focus', this.handleFocus);
-      input.addEventListener('blur', this.handleBlur);
-    });
+    document
+      .querySelectorAll('[data-fat-translatable="true"]')
+      .forEach((input) => {
+        input.removeEventListener("focus", this.handleFocus);
+        input.removeEventListener("blur", this.handleBlur);
+        input.addEventListener("focus", this.handleFocus);
+        input.addEventListener("blur", this.handleBlur);
+      });
   }
 
   handleDelegatedKeydown(e) {
     const target = e.target;
-    const isInput = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
-    if (!isInput || target.dataset.fatTranslatable !== 'true') return;
+    const isInput =
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement;
+    if (!isInput || target.dataset.fatTranslatable !== "true") return;
     if (!this.isEnabled || this.isApplying) return;
 
-    if (e.key === ' ' || e.code === 'Space') {
+    if (e.key === " " || e.code === "Space") {
       const cursor = target.selectionStart;
       const before = target.value.substring(0, cursor);
       const match = before.match(/(\S+)$/);
@@ -87,13 +92,18 @@ class FilamentAutoTranslate {
 
     try {
       const response = await fetch(config.endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-          Accept: 'application/json',
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN":
+            document.querySelector('meta[name="csrf-token"]')?.content || "",
+          Accept: "application/json",
         },
-        body: JSON.stringify({ text: word, target_lang: config.targetLang, mode: config.mode }),
+        body: JSON.stringify({
+          text: word,
+          target_lang: config.targetLang,
+          mode: config.mode,
+        }),
       });
 
       if (!response.ok) {
@@ -101,8 +111,8 @@ class FilamentAutoTranslate {
         this.showMessage(
           input,
           response.status === 429
-            ? 'Too many translations — pausing for a moment.'
-            : 'Translation unavailable.'
+            ? "Too many translations — pausing for a moment."
+            : "Translation unavailable.",
         );
         return;
       }
@@ -118,7 +128,7 @@ class FilamentAutoTranslate {
       }
     } catch (error) {
       this.log(`request exception (${error.message})`);
-      this.showMessage(input, 'Translation unavailable.');
+      this.showMessage(input, "Translation unavailable.");
     }
   }
 
@@ -136,18 +146,18 @@ class FilamentAutoTranslate {
     input.value = prefix + translatedWord + suffix + rest;
     const newCursor = prefix.length + translatedWord.length + suffix.length;
     input.setSelectionRange(newCursor, newCursor);
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
     this.isApplying = false;
   }
 
   showLoading(input) {
     this.activeInput = input;
     this.positionOverlay(input);
-    this.overlay.classList.add('is-loading');
-    this.overlay.classList.remove('is-error');
+    this.overlay.classList.add("is-loading");
+    this.overlay.classList.remove("is-error");
     this.overlay.innerHTML =
       '<div class="fat-loading"><svg class="fat-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="fat-spin-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg><span>Translating...</span></div>';
-    this.overlay.style.display = 'block';
+    this.overlay.style.display = "block";
   }
 
   // Brief, auto-dismissing notice. Text is fixed and set via textContent, so no
@@ -155,24 +165,24 @@ class FilamentAutoTranslate {
   showMessage(input, message) {
     this.activeInput = input;
     this.positionOverlay(input);
-    this.overlay.classList.remove('is-loading');
-    this.overlay.classList.add('is-error');
-    this.overlay.textContent = '';
+    this.overlay.classList.remove("is-loading");
+    this.overlay.classList.add("is-error");
+    this.overlay.textContent = "";
 
-    const box = document.createElement('div');
-    box.className = 'fat-message';
-    const span = document.createElement('span');
+    const box = document.createElement("div");
+    box.className = "fat-message";
+    const span = document.createElement("span");
     span.textContent = message;
     box.appendChild(span);
     this.overlay.appendChild(box);
 
-    this.overlay.style.display = 'block';
+    this.overlay.style.display = "block";
     setTimeout(() => this.hideOverlay(), 2500);
   }
 
   hideOverlay() {
-    this.overlay.style.display = 'none';
-    this.overlay.classList.remove('is-error', 'is-loading');
+    this.overlay.style.display = "none";
+    this.overlay.classList.remove("is-error", "is-loading");
     this.activeInput = null;
   }
 
@@ -185,14 +195,17 @@ class FilamentAutoTranslate {
   }
 
   handleGlobalKeydown(e) {
-    if (e.key === 'Escape' && this.overlay.style.display !== 'none') {
+    if (e.key === "Escape" && this.overlay.style.display !== "none") {
       e.preventDefault();
       this.hideOverlay();
     }
   }
 
   handleFocus(e) {
-    if (this.activeInput === e.target && this.overlay.style.display === 'block') {
+    if (
+      this.activeInput === e.target &&
+      this.overlay.style.display === "block"
+    ) {
       this.positionOverlay(e.target);
     }
   }
@@ -205,25 +218,29 @@ class FilamentAutoTranslate {
 
   getConfig(input) {
     try {
-      return JSON.parse(input.dataset.fatConfig || '{}');
+      return JSON.parse(input.dataset.fatConfig || "{}");
     } catch {
-      return { endpoint: '/filament-auto-translate/translate', targetLang: 'ur', mode: 'transliterate' };
+      return {
+        endpoint: "/filament-auto-transliterate/translate",
+        targetLang: "ur",
+        mode: "transliterate",
+      };
     }
   }
 
   toggleEnabled(enabled) {
     this.isEnabled = enabled;
-    localStorage.setItem('fat_enabled', enabled ? 'true' : 'false');
+    localStorage.setItem("fat_enabled", enabled ? "true" : "false");
     if (!enabled) this.hideOverlay();
   }
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    window.filamentAutoTranslate = new FilamentAutoTranslate();
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    window.FilamentAutoTransliterate = new FilamentAutoTransliterate();
   });
 } else {
-  window.filamentAutoTranslate = new FilamentAutoTranslate();
+  window.FilamentAutoTransliterate = new FilamentAutoTransliterate();
 }
 
-export default FilamentAutoTranslate;
+export default FilamentAutoTransliterate;

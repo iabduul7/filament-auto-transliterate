@@ -1,8 +1,8 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate\Contracts;
+namespace Iabduul7\FilamentAutoTransliterate\Contracts;
 
-use Iabduul7\FilamentAutoTranslate\Data\TranslationResult;
+use Iabduul7\FilamentAutoTransliterate\Data\TranslationResult;
 
 interface TranslationProvider
 {
