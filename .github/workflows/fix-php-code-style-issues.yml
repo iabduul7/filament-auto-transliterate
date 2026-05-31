@@ -24,10 +24,11 @@ jobs:
           php-version: '8.4'
           coverage: none
 
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
       - name: Run Pint
-        run: |
-          composer require laravel/pint --dev --no-interaction
-          vendor/bin/pint
+        run: vendor/bin/pint
 
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v5
