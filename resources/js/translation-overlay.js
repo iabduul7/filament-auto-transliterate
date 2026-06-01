@@ -15,6 +15,10 @@ class FilamentAutoTransliterate {
     this.isApplying = false;
     this.debug = false;
 
+    // In-field loading spinner: the injected node and its Filament wrapper host.
+    this.spinnerEl = null;
+    this.spinnerHost = null;
+
     this.handleFocus = this.handleFocus.bind(this);
     this.handleBlur = this.handleBlur.bind(this);
     this.handleDelegatedKeydown = this.handleDelegatedKeydown.bind(this);
@@ -77,7 +81,7 @@ class FilamentAutoTransliterate {
       // Already in target script (Arabic/Urdu block) — leave it alone.
       if (/[؀-ۿ]/.test(word)) return;
 
-      this.showLoading(target);
+      this.startLoading(target);
       this.translateAndApply(target, word, this.getConfig(target));
     }
   }
@@ -85,8 +89,8 @@ class FilamentAutoTransliterate {
   async translateAndApply(input, word, config) {
     const cacheKey = `${config.mode}:${config.targetLang}:${word}`;
     if (this.wordCache.has(cacheKey)) {
+      this.stopLoading(input);
       this.applyInline(input, word, this.wordCache.get(cacheKey));
-      this.hideOverlay();
       return;
     }
 
@@ -106,6 +110,10 @@ class FilamentAutoTransliterate {
         }),
       });
 
+      // Loading is finished the moment we have a response (or an error) — always
+      // stop the spinner first so no branch can leave it spinning.
+      this.stopLoading(input);
+
       if (!response.ok) {
         this.log(`request failed (status=${response.status})`);
         this.showMessage(
@@ -121,13 +129,12 @@ class FilamentAutoTransliterate {
       if (data.success && data.translated) {
         this.wordCache.set(cacheKey, data.translated);
         this.applyInline(input, word, data.translated);
-        this.hideOverlay();
-      } else {
-        // No conversion available: leave the typed word untouched, no noise.
-        this.hideOverlay();
       }
+      // No conversion available: spinner already stopped; leave the typed word
+      // untouched, no noise.
     } catch (error) {
       this.log(`request exception (${error.message})`);
+      this.stopLoading(input);
       this.showMessage(input, "Translation unavailable.");
     }
   }
@@ -148,6 +155,54 @@ class FilamentAutoTransliterate {
     input.setSelectionRange(newCursor, newCursor);
     input.dispatchEvent(new Event("input", { bubbles: true }));
     this.isApplying = false;
+  }
+
+  // Begin the loading indicator for a field. Prefers a compact spinner inside
+  // the field's trailing edge; falls back to the below-field box for hosts whose
+  // inputs aren't wrapped in Filament's `.fi-input-wrp`.
+  startLoading(input) {
+    const host = input.closest(".fi-input-wrp");
+    if (!host) {
+      this.showLoading(input);
+      return;
+    }
+    this.injectFieldSpinner(host);
+  }
+
+  // End the loading indicator regardless of which form was shown.
+  stopLoading(input) {
+    this.removeFieldSpinner();
+    // Only hide the box if it is showing the loading state — never clobber an
+    // error message (which manages its own auto-dismiss).
+    if (this.overlay.classList.contains("is-loading")) {
+      this.hideOverlay();
+    }
+  }
+
+  injectFieldSpinner(host) {
+    // Clear any previous spinner first so rapid space presses can't stack them.
+    this.removeFieldSpinner();
+
+    host.classList.add("fat-loading-host");
+    const spinner = document.createElement("span");
+    spinner.className = "fat-field-spinner";
+    spinner.innerHTML =
+      '<svg class="fat-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="fat-spin-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>';
+    host.appendChild(spinner);
+
+    this.spinnerEl = spinner;
+    this.spinnerHost = host;
+  }
+
+  removeFieldSpinner() {
+    if (this.spinnerEl) {
+      this.spinnerEl.remove();
+      this.spinnerEl = null;
+    }
+    if (this.spinnerHost) {
+      this.spinnerHost.classList.remove("fat-loading-host");
+      this.spinnerHost = null;
+    }
   }
 
   showLoading(input) {
@@ -231,7 +286,10 @@ class FilamentAutoTransliterate {
   toggleEnabled(enabled) {
     this.isEnabled = enabled;
     localStorage.setItem("fat_enabled", enabled ? "true" : "false");
-    if (!enabled) this.hideOverlay();
+    if (!enabled) {
+      this.hideOverlay();
+      this.removeFieldSpinner();
+    }
   }
 }
 
