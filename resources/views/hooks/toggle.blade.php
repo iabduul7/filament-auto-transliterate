@@ -13,7 +13,7 @@
         }"
         class="relative flex items-center justify-center rounded-lg p-2 outline-none hover:bg-gray-100 focus:ring-2 focus:ring-primary-500 dark:hover:bg-white/5"
         :class="{
-            'text-primary-600 dark:text-primary-400': enabled,
+            'text-primary-600 dark:text-primary-400 ring-2 ring-primary-500': enabled,
             'text-gray-500 dark:text-gray-400': !enabled
         }">
         <span class="sr-only">Toggle inline translation</span>
