@@ -40,3 +40,43 @@ it('keeps the hash in sync when the original text changes', function () {
 
     expect($row->fresh()->original_text_hash)->toBe(hash('sha256', 'second'));
 });
+
+it('caches and retrieves a translation via the helper methods', function () {
+    TranslationCache::cacheTranslation('mohsin', 'موحسن', 'ur', 'google_input_tools', 0.95, 1.2, 'transliterate');
+
+    $found = TranslationCache::getTranslation('mohsin', 'ur', 'transliterate');
+
+    expect($found)->not->toBeNull()
+        ->and($found->translated_text)->toBe('موحسن')
+        ->and($found->source)->toBe('google_input_tools');
+});
+
+it('caches without a mode for legacy callers', function () {
+    $row = TranslationCache::cacheTranslation('city', 'شہر', 'ur', 'dictionary');
+
+    expect($row->translated_text)->toBe('شہر');
+    // No mode passed -> column stays null, and a mode-less lookup still finds it.
+    expect(TranslationCache::getTranslation('city', 'ur'))->not->toBeNull();
+});
+
+it('reports stats including average processing time', function () {
+    TranslationCache::cacheTranslation('a', 'ا', 'ur', 'mymemory', 0.8, 2.0, 'translate');
+    TranslationCache::cacheTranslation('b', 'ب', 'ur', 'mymemory', 0.9, 4.0, 'translate');
+
+    $stats = TranslationCache::getStats();
+
+    expect($stats['total_translations'])->toBe(2)
+        ->and($stats)->toHaveKey('avg_processing_time')
+        ->and($stats['by_source']['mymemory'])->toBe(2);
+});
+
+it('cleans up low-confidence entries', function () {
+    TranslationCache::cacheTranslation('keep', 'ک', 'ur', 'google', 0.9, 0.0, 'transliterate');
+    TranslationCache::cacheTranslation('drop', 'ڈ', 'ur', 'transliteration', 0.2, 0.0, 'transliterate');
+
+    $removed = TranslationCache::cleanupLowQuality(0.5);
+
+    expect($removed)->toBe(1)
+        ->and(TranslationCache::count())->toBe(1)
+        ->and(TranslationCache::getTranslation('keep', 'ur', 'transliterate'))->not->toBeNull();
+});

@@ -7,6 +7,7 @@ use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Iabduul7\FilamentAutoTransliterate\Macros\TranslatableMacro;
 use Iabduul7\FilamentAutoTransliterate\Services\TranslationService;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -21,7 +22,17 @@ class FilamentAutoTransliterateServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews()
             ->hasRoute('web')
-            ->hasMigration('create_translation_cache_table');
+            ->hasMigration('create_translation_cache_table')
+            ->hasInstallCommand(function (InstallCommand $command) {
+                // `php artisan filament-auto-transliterate:install` publishes the
+                // config + migration and offers to run migrations, so consumers
+                // can get the cache table without hand-copying files.
+                $command
+                    ->publishConfigFile()
+                    ->publishMigrations()
+                    ->askToRunMigrations()
+                    ->askToStarRepoOnGitHub('iabduul7/filament-auto-transliterate');
+            });
     }
 
     public function packageRegistered(): void

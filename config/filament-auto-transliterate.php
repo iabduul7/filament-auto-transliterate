@@ -41,7 +41,9 @@ return [
 
     'api_timeout' => env('FILAMENT_AUTO_TRANSLITERATE_TIMEOUT', 5),
 
-    // Permanent DB cache of every successful conversion.
+    // Permanent DB cache of every successful conversion. The package owns this
+    // table; if a host app already has a `translation_cache` table, override this
+    // before running the migration.
     'cache_enabled' => true,
     'table_name' => 'translation_cache',
 
