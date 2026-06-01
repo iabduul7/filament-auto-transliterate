@@ -51,12 +51,26 @@ it('caches and retrieves a translation via the helper methods', function () {
         ->and($found->source)->toBe('google_input_tools');
 });
 
-it('caches without a mode for legacy callers', function () {
+it('resolves a null mode to the configured default for legacy callers', function () {
+    config(['filament-auto-transliterate.mode' => 'transliterate']);
+
     $row = TranslationCache::cacheTranslation('city', 'شہر', 'ur', 'dictionary');
 
-    expect($row->translated_text)->toBe('شہر');
-    // No mode passed -> column stays null, and a mode-less lookup still finds it.
+    // No mode passed -> resolves to the configured default mode (also the DB
+    // column default), so the row is stored under that mode...
+    expect($row->translated_text)->toBe('شہر')
+        ->and($row->mode)->toBe('transliterate');
+
+    // ...and a mode-less lookup (which resolves the same way) finds it.
     expect(TranslationCache::getTranslation('city', 'ur'))->not->toBeNull();
+});
+
+it('does not match across modes', function () {
+    TranslationCache::cacheTranslation('school', 'مدرسہ', 'ur', 'mymemory', 0.9, 0.0, 'translate');
+
+    // A transliterate lookup must not return the translate row.
+    expect(TranslationCache::getTranslation('school', 'ur', 'transliterate'))->toBeNull()
+        ->and(TranslationCache::getTranslation('school', 'ur', 'translate'))->not->toBeNull();
 });
 
 it('reports stats including average processing time', function () {

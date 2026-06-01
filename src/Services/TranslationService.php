@@ -55,7 +55,7 @@ class TranslationService
                 return $result->toArray();
             }
 
-            Log::warning("[AutoTranslate] provider {$provider->key()} failed");
+            Log::warning("[FilamentAutoTransliterate] provider {$provider->key()} failed");
             $this->debug("provider {$provider->key()} error: {$result->error}");
         }
 
@@ -165,7 +165,7 @@ class TranslationService
                 ->where('original_text', $text) // guard against hash collisions
                 ->first();
         } catch (\Throwable $e) {
-            Log::error('[AutoTranslate] cache read failed: '.$e->getMessage());
+            Log::error('[FilamentAutoTransliterate] cache read failed: '.$e->getMessage());
 
             return null;
         }
@@ -192,7 +192,7 @@ class TranslationService
                 ],
             );
         } catch (\Throwable $e) {
-            Log::error('[AutoTranslate] cache write failed: '.$e->getMessage());
+            Log::error('[FilamentAutoTransliterate] cache write failed: '.$e->getMessage());
         }
     }
 
@@ -237,7 +237,7 @@ class TranslationService
     private function debug(string $message): void
     {
         if (config('filament-auto-transliterate.log_requests', false)) {
-            Log::debug("[AutoTranslate] {$message}");
+            Log::debug("[FilamentAutoTransliterate] {$message}");
         }
     }
 }

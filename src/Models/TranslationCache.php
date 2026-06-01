@@ -60,23 +60,35 @@ class TranslationCache extends Model
     }
 
     /**
-     * Look up a cached conversion by original text + target language (+ optional
-     * mode). Hash-first for index use, with an exact-text check to guard against
-     * SHA-256 collisions.
+     * Resolve a possibly-null mode to a concrete one. A null mode (e.g. from a
+     * legacy caller) falls back to the configured default mode, which also
+     * matches the `mode` column's database default — so lookups and writes always
+     * target one specific mode and never match across modes.
+     */
+    protected static function resolveMode(?string $mode): string
+    {
+        return $mode ?? (string) config('filament-auto-transliterate.mode', 'transliterate');
+    }
+
+    /**
+     * Look up a cached conversion by original text + target language + mode.
+     * Hash-first for index use, with an exact-text check to guard against
+     * SHA-256 collisions. A null mode resolves to the configured default.
      */
     public static function getTranslation(string $originalText, string $targetLang, ?string $mode = null): ?self
     {
         return static::query()
             ->where('original_text_hash', hash('sha256', $originalText))
             ->where('target_language', $targetLang)
-            ->when($mode !== null, fn ($q) => $q->where('mode', $mode))
+            ->where('mode', static::resolveMode($mode))
             ->where('original_text', $originalText)
             ->first();
     }
 
     /**
-     * Permanently cache a conversion result. `mode` is optional so legacy callers
-     * that predate the transliterate/translate split keep working.
+     * Permanently cache a conversion result. A null mode resolves to the
+     * configured default mode, so a write always targets one specific mode and
+     * never overwrites a row of a different mode for the same text/target.
      */
     public static function cacheTranslation(
         string $originalText,
@@ -87,16 +99,11 @@ class TranslationCache extends Model
         float $processingTime = 0.0,
         ?string $mode = null,
     ): self {
-        $attributes = [
+        return static::updateOrCreate([
             'original_text' => $originalText,
             'target_language' => $targetLang,
-        ];
-
-        if ($mode !== null) {
-            $attributes['mode'] = $mode;
-        }
-
-        return static::updateOrCreate($attributes, [
+            'mode' => static::resolveMode($mode),
+        ], [
             'translated_text' => $translatedText,
             'source' => $source,
             'confidence' => $confidence,
