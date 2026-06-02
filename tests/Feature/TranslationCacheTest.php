@@ -1,6 +1,7 @@
 <?php
 
 use Iabduul7\FilamentAutoTransliterate\Models\TranslationCache;
+use Illuminate\Support\Facades\DB;
 
 /*
 | original_text_hash is a generated column on MySQL but a plain column on other
@@ -93,4 +94,41 @@ it('cleans up low-confidence entries', function () {
     expect($removed)->toBe(1)
         ->and(TranslationCache::count())->toBe(1)
         ->and(TranslationCache::getTranslation('keep', 'ur', 'transliterate'))->not->toBeNull();
+});
+
+it('updates an existing row in place rather than duplicating', function () {
+    $first = TranslationCache::cacheTranslation('rent', 'کرایہ', 'ur', 'mymemory', 0.8, 1.0, 'transliterate');
+    $second = TranslationCache::cacheTranslation('rent', 'کرایہ-v2', 'ur', 'google_input_tools', 0.95, 2.0, 'transliterate');
+
+    // Same text+lang+mode -> one row, updated (not a second insert).
+    expect(TranslationCache::count())->toBe(1)
+        ->and($second->id)->toBe($first->id)
+        ->and(TranslationCache::getTranslation('rent', 'ur', 'transliterate')->translated_text)->toBe('کرایہ-v2');
+});
+
+it('backfills a null original_text_hash on the next save', function () {
+    // Simulate a legacy/adopted row that predates the hash population (e.g. a
+    // host's existing table). Insert without going through the model hook.
+    $id = DB::table((new TranslationCache)->getTable())->insertGetId([
+        'original_text' => 'legacy',
+        'translated_text' => 'پرانا',
+        'target_language' => 'ur',
+        'mode' => 'transliterate',
+        'source' => 'dictionary',
+        'confidence' => 0.9,
+        'processing_time' => 0.0,
+        'original_text_hash' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    // Not findable by hash yet.
+    expect(TranslationCache::getTranslation('legacy', 'ur', 'transliterate'))->toBeNull();
+
+    // A no-text-change save should still backfill the hash.
+    $row = TranslationCache::find($id);
+    $row->update(['source' => 'mymemory']);
+
+    expect($row->fresh()->original_text_hash)->toBe(hash('sha256', 'legacy'))
+        ->and(TranslationCache::getTranslation('legacy', 'ur', 'transliterate'))->not->toBeNull();
 });

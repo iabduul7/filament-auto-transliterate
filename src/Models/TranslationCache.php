@@ -53,7 +53,11 @@ class TranslationCache extends Model
                 return;
             }
 
-            if ($model->isDirty('original_text')) {
+            // Populate the hash when the text changes, and also backfill it when
+            // it is still null — so pre-existing rows (e.g. a host's legacy table
+            // adopted by the package) get a hash on their next write and become
+            // findable by the hash-indexed lookups.
+            if ($model->isDirty('original_text') || $model->original_text_hash === null) {
                 $model->original_text_hash = hash('sha256', (string) $model->original_text);
             }
         });
@@ -99,16 +103,25 @@ class TranslationCache extends Model
         float $processingTime = 0.0,
         ?string $mode = null,
     ): self {
-        return static::updateOrCreate([
+        $mode = static::resolveMode($mode);
+
+        // Find via the hash-indexed lookup rather than matching on the unindexed
+        // `original_text` TEXT column (which would force a full table scan on
+        // every write). Update the existing row or create a new one.
+        $model = static::getTranslation($originalText, $targetLang, $mode) ?? new static([
             'original_text' => $originalText,
             'target_language' => $targetLang,
-            'mode' => static::resolveMode($mode),
-        ], [
+            'mode' => $mode,
+        ]);
+
+        $model->fill([
             'translated_text' => $translatedText,
             'source' => $source,
             'confidence' => $confidence,
             'processing_time' => $processingTime,
-        ]);
+        ])->save();
+
+        return $model;
     }
 
     /**
