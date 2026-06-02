@@ -54,6 +54,16 @@ class FilamentAutoTransliterate {
   }
 
   observeInputs() {
+    // Drop spinner entries whose host wrapper was detached by a Livewire morph,
+    // so a replaced .fi-input-wrp can't be left with a stuck `fat-loading-host`
+    // class (and stale `position: relative`).
+    this.spinners.forEach((entry, host) => {
+      if (!document.contains(host)) {
+        entry.el.remove();
+        this.spinners.delete(host);
+      }
+    });
+
     document
       .querySelectorAll('[data-fat-translatable="true"]')
       .forEach((input) => {
@@ -143,7 +153,12 @@ class FilamentAutoTransliterate {
   applyInline(input, originalWord, translatedWord) {
     const cursor = input.selectionStart;
     const before = input.value.substring(0, cursor);
-    const lastIndex = before.lastIndexOf(originalWord);
+
+    // Find the last WHOLE-TOKEN occurrence of the word (bounded by whitespace or
+    // the string edges). This avoids replacing the word where it appears as a
+    // substring of another word — which a slow/overlapping request could
+    // otherwise do after the surrounding text has shifted.
+    const lastIndex = this.lastWholeWordIndex(before, originalWord);
     if (lastIndex === -1) return;
 
     const prefix = before.substring(0, lastIndex);
@@ -156,6 +171,25 @@ class FilamentAutoTransliterate {
     input.setSelectionRange(newCursor, newCursor);
     input.dispatchEvent(new Event("input", { bubbles: true }));
     this.isApplying = false;
+  }
+
+  // Index of the last occurrence of `word` in `text` that stands as a complete
+  // token (preceded by whitespace or the start, followed by whitespace or the
+  // end). Returns -1 if there is no such occurrence.
+  lastWholeWordIndex(text, word) {
+    let from = text.length;
+    for (;;) {
+      const idx = text.lastIndexOf(word, from);
+      if (idx === -1) return -1;
+      const before = idx === 0 ? "" : text[idx - 1];
+      const afterPos = idx + word.length;
+      const after = afterPos >= text.length ? "" : text[afterPos];
+      const boundedBefore = before === "" || /\s/.test(before);
+      const boundedAfter = after === "" || /\s/.test(after);
+      if (boundedBefore && boundedAfter) return idx;
+      from = idx - 1;
+      if (from < 0) return -1;
+    }
   }
 
   // Begin the loading indicator for a field. Prefers a compact spinner inside
