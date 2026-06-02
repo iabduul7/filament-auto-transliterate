@@ -1,15 +1,15 @@
 <?php
 
-use Iabduul7\FilamentAutoTranslate\Providers\DictionaryProvider;
-use Iabduul7\FilamentAutoTranslate\Providers\GoogleInputToolsProvider;
-use Iabduul7\FilamentAutoTranslate\Providers\GoogleTranslateProvider;
-use Iabduul7\FilamentAutoTranslate\Providers\LibreTranslateProvider;
-use Iabduul7\FilamentAutoTranslate\Providers\MicrosoftProvider;
-use Iabduul7\FilamentAutoTranslate\Providers\MyMemoryProvider;
+use Iabduul7\FilamentAutoTransliterate\Providers\DictionaryProvider;
+use Iabduul7\FilamentAutoTransliterate\Providers\GoogleInputToolsProvider;
+use Iabduul7\FilamentAutoTransliterate\Providers\GoogleTranslateProvider;
+use Iabduul7\FilamentAutoTransliterate\Providers\LibreTranslateProvider;
+use Iabduul7\FilamentAutoTransliterate\Providers\MicrosoftProvider;
+use Iabduul7\FilamentAutoTransliterate\Providers\MyMemoryProvider;
 
 return [
     // Master switch. When false the ->translatable() macro is a no-op.
-    'enabled' => env('FILAMENT_AUTO_TRANSLATE_ENABLED', true),
+    'enabled' => env('FILAMENT_AUTO_TRANSLITERATE_ENABLED', true),
 
     /*
     | Default conversion mode.
@@ -19,10 +19,10 @@ return [
     |   translate     -> convert by meaning (English -> Urdu). Opt-in.
     | Override per field: ->translatable(mode: 'translate').
     */
-    'mode' => env('FILAMENT_AUTO_TRANSLATE_MODE', 'transliterate'),
+    'mode' => env('FILAMENT_AUTO_TRANSLITERATE_MODE', 'transliterate'),
 
-    'source_language' => env('FILAMENT_AUTO_TRANSLATE_SOURCE', 'en'),
-    'target_language' => env('FILAMENT_AUTO_TRANSLATE_TARGET', 'ur'),
+    'source_language' => env('FILAMENT_AUTO_TRANSLITERATE_SOURCE', 'en'),
+    'target_language' => env('FILAMENT_AUTO_TRANSLITERATE_TARGET', 'ur'),
 
     /*
     | If the typed text already matches this pattern it is assumed to be in the
@@ -34,20 +34,22 @@ return [
     // HTTP endpoint registration. Auth-gated by default — these routes proxy to
     // external translation APIs and must not be public.
     'route' => [
-        'prefix' => env('FILAMENT_AUTO_TRANSLATE_PREFIX', 'filament-auto-translate'),
+        'prefix' => env('FILAMENT_AUTO_TRANSLITERATE_PREFIX', 'filament-auto-transliterate'),
         'middleware' => ['web', 'auth'],
-        'throttle' => env('FILAMENT_AUTO_TRANSLATE_THROTTLE', '60,1'),
+        'throttle' => env('FILAMENT_AUTO_TRANSLITERATE_THROTTLE', '60,1'),
     ],
 
-    'api_timeout' => env('FILAMENT_AUTO_TRANSLATE_TIMEOUT', 5),
+    'api_timeout' => env('FILAMENT_AUTO_TRANSLITERATE_TIMEOUT', 5),
 
-    // Permanent DB cache of every successful conversion.
+    // Permanent DB cache of every successful conversion. The package owns this
+    // table; if a host app already has a `translation_cache` table, override this
+    // before running the migration.
     'cache_enabled' => true,
     'table_name' => 'translation_cache',
 
     /*
     | Map of provider key -> class. Add your own here (must implement the
-    | Iabduul7\FilamentAutoTranslate\Contracts\TranslationProvider contract),
+    | Iabduul7\FilamentAutoTransliterate\Contracts\TranslationProvider contract),
     | then list its key under the relevant mode below.
     */
     'provider_map' => [
@@ -81,7 +83,7 @@ return [
     | Use a {target} placeholder to ship one file per language, e.g.
     | resource_path('dictionaries/en-{target}.json'). Null disables it.
     */
-    'dictionary_path' => env('FILAMENT_AUTO_TRANSLATE_DICTIONARY', null),
+    'dictionary_path' => env('FILAMENT_AUTO_TRANSLITERATE_DICTIONARY', null),
     'dictionary_max_words' => 3,
 
     'min_text_length' => 2,
@@ -93,16 +95,37 @@ return [
     | default because it produces phonetic nonsense (e.g. "hello" -> garbage).
     | When off, failed conversions leave the user's text unchanged.
     */
-    'fallback_transliteration' => env('FILAMENT_AUTO_TRANSLATE_FALLBACK', false),
+    'fallback_transliteration' => env('FILAMENT_AUTO_TRANSLITERATE_FALLBACK', false),
     'char_fallback_map' => [
-        'a' => 'ا', 'b' => 'ب', 'c' => 'ک', 'd' => 'د', 'e' => 'ے',
-        'f' => 'ف', 'g' => 'گ', 'h' => 'ہ', 'i' => 'ی', 'j' => 'ج',
-        'k' => 'ک', 'l' => 'ل', 'm' => 'م', 'n' => 'ن', 'o' => 'و',
-        'p' => 'پ', 'q' => 'ق', 'r' => 'ر', 's' => 'س', 't' => 'ت',
-        'u' => 'و', 'v' => 'و', 'w' => 'و', 'x' => 'کس', 'y' => 'ی', 'z' => 'ز',
+        'a' => 'ا',
+        'b' => 'ب',
+        'c' => 'ک',
+        'd' => 'د',
+        'e' => 'ے',
+        'f' => 'ف',
+        'g' => 'گ',
+        'h' => 'ہ',
+        'i' => 'ی',
+        'j' => 'ج',
+        'k' => 'ک',
+        'l' => 'ل',
+        'm' => 'م',
+        'n' => 'ن',
+        'o' => 'و',
+        'p' => 'پ',
+        'q' => 'ق',
+        'r' => 'ر',
+        's' => 'س',
+        't' => 'ت',
+        'u' => 'و',
+        'v' => 'و',
+        'w' => 'و',
+        'x' => 'کس',
+        'y' => 'ی',
+        'z' => 'ز',
     ],
 
     // When true, logs activity (including typed text) at debug level. Off by
     // default to keep user input out of logs.
-    'log_requests' => env('FILAMENT_AUTO_TRANSLATE_LOG', false),
+    'log_requests' => env('FILAMENT_AUTO_TRANSLITERATE_LOG', false),
 ];

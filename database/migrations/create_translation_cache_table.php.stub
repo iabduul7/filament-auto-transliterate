@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create(config('filament-auto-translate.table_name', 'translation_cache'), function (Blueprint $table) {
+        Schema::create(config('filament-auto-transliterate.table_name', 'translation_cache'), function (Blueprint $table) {
             $table->id();
             $table->text('original_text');
             $table->text('translated_text');
@@ -37,6 +37,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists(config('filament-auto-translate.table_name', 'translation_cache'));
+        Schema::dropIfExists(config('filament-auto-transliterate.table_name', 'translation_cache'));
     }
 };

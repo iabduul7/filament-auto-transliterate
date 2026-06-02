@@ -1,11 +1,11 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate\Services;
+namespace Iabduul7\FilamentAutoTransliterate\Services;
 
-use Iabduul7\FilamentAutoTranslate\Contracts\TranslationProvider;
-use Iabduul7\FilamentAutoTranslate\Data\TranslationResult;
-use Iabduul7\FilamentAutoTranslate\Enums\TranslationMode;
-use Iabduul7\FilamentAutoTranslate\Models\TranslationCache;
+use Iabduul7\FilamentAutoTransliterate\Contracts\TranslationProvider;
+use Iabduul7\FilamentAutoTransliterate\Data\TranslationResult;
+use Iabduul7\FilamentAutoTransliterate\Enums\TranslationMode;
+use Iabduul7\FilamentAutoTransliterate\Models\TranslationCache;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -13,8 +13,8 @@ class TranslationService
 {
     public function translate(string $text, ?string $targetLang = null, TranslationMode|string|null $mode = null): array
     {
-        $targetLang ??= (string) config('filament-auto-translate.target_language', 'ur');
-        $sourceLang = (string) config('filament-auto-translate.source_language', 'en');
+        $targetLang ??= (string) config('filament-auto-transliterate.target_language', 'ur');
+        $sourceLang = (string) config('filament-auto-transliterate.source_language', 'en');
         $mode = $this->resolveMode($mode);
 
         $this->debug("request mode={$mode->value} target={$targetLang}");
@@ -55,14 +55,14 @@ class TranslationService
                 return $result->toArray();
             }
 
-            Log::warning("[AutoTranslate] provider {$provider->key()} failed");
+            Log::warning("[FilamentAutoTransliterate] provider {$provider->key()} failed");
             $this->debug("provider {$provider->key()} error: {$result->error}");
         }
 
         // Everything failed. By design we leave the user's text untouched rather
         // than substituting garbage. A crude char-by-char transliteration is only
         // used if a host explicitly opts in.
-        if (config('filament-auto-translate.fallback_transliteration', false)) {
+        if (config('filament-auto-transliterate.fallback_transliteration', false)) {
             $fallback = $this->charFallback($text, $targetLang);
             $this->cache($text, $targetLang, $mode, $fallback);
 
@@ -85,7 +85,7 @@ class TranslationService
             $status[$key] = Cache::remember("fat_provider_health_{$key}", 300, function () use ($key) {
                 $provider = $this->resolveProvider($key);
                 $result = $provider && $provider->isConfigured()
-                    ? $this->attempt($provider, 'test', 'en', (string) config('filament-auto-translate.target_language', 'ur'))
+                    ? $this->attempt($provider, 'test', 'en', (string) config('filament-auto-transliterate.target_language', 'ur'))
                     : TranslationResult::failure('Not configured');
 
                 return [
@@ -127,7 +127,7 @@ class TranslationService
 
     private function resolveProvider(string $key): ?TranslationProvider
     {
-        $class = config("filament-auto-translate.provider_map.{$key}");
+        $class = config("filament-auto-transliterate.provider_map.{$key}");
 
         if (! is_string($class) || ! class_exists($class)) {
             return null;
@@ -143,7 +143,7 @@ class TranslationService
      */
     private function allProviderKeys(): array
     {
-        return array_keys((array) config('filament-auto-translate.provider_map', []));
+        return array_keys((array) config('filament-auto-transliterate.provider_map', []));
     }
 
     private function attempt(TranslationProvider $provider, string $text, string $sourceLang, string $targetLang): TranslationResult
@@ -165,7 +165,7 @@ class TranslationService
                 ->where('original_text', $text) // guard against hash collisions
                 ->first();
         } catch (\Throwable $e) {
-            Log::error('[AutoTranslate] cache read failed: '.$e->getMessage());
+            Log::error('[FilamentAutoTransliterate] cache read failed: '.$e->getMessage());
 
             return null;
         }
@@ -173,32 +173,30 @@ class TranslationService
 
     private function cache(string $text, string $targetLang, TranslationMode $mode, TranslationResult $result): void
     {
-        if (! $result->success || ! config('filament-auto-translate.cache_enabled', true)) {
+        if (! $result->success || ! config('filament-auto-transliterate.cache_enabled', true)) {
             return;
         }
 
         try {
-            TranslationCache::updateOrCreate(
-                [
-                    'original_text' => $text,
-                    'target_language' => $targetLang,
-                    'mode' => $mode->value,
-                ],
-                [
-                    'translated_text' => $result->translated,
-                    'source' => $result->source,
-                    'confidence' => $result->confidence,
-                    'processing_time' => $result->processingTime,
-                ],
+            // Use the model helper, which finds the row via the hash index rather
+            // than matching on the unindexed `original_text` TEXT column.
+            TranslationCache::cacheTranslation(
+                $text,
+                (string) $result->translated,
+                $targetLang,
+                (string) $result->source,
+                $result->confidence,
+                $result->processingTime,
+                $mode->value,
             );
         } catch (\Throwable $e) {
-            Log::error('[AutoTranslate] cache write failed: '.$e->getMessage());
+            Log::error('[FilamentAutoTransliterate] cache write failed: '.$e->getMessage());
         }
     }
 
     private function isAlreadyTargetScript(string $text): bool
     {
-        $pattern = config('filament-auto-translate.target_script_pattern', '/[\x{0600}-\x{06FF}]/u');
+        $pattern = config('filament-auto-transliterate.target_script_pattern', '/[\x{0600}-\x{06FF}]/u');
 
         if (! is_string($pattern) || $pattern === '') {
             return false;
@@ -216,7 +214,7 @@ class TranslationService
     {
         $startTime = microtime(true);
 
-        $map = (array) config('filament-auto-translate.char_fallback_map', []);
+        $map = (array) config('filament-auto-transliterate.char_fallback_map', []);
         $lower = mb_strtolower($text);
         $out = '';
 
@@ -236,8 +234,8 @@ class TranslationService
 
     private function debug(string $message): void
     {
-        if (config('filament-auto-translate.log_requests', false)) {
-            Log::debug("[AutoTranslate] {$message}");
+        if (config('filament-auto-transliterate.log_requests', false)) {
+            Log::debug("[FilamentAutoTransliterate] {$message}");
         }
     }
 }

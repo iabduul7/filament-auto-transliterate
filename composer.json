@@ -1,66 +1,66 @@
 {
-    "name": "iabduul7/filament-auto-translate",
-    "description": "Inline, as-you-type transliteration and translation for Filament form inputs. Type Roman Urdu, get Urdu script on space, without leaving the field.",
-    "keywords": [
-        "filament",
-        "laravel",
-        "urdu",
-        "transliteration",
-        "translation",
-        "inline",
-        "input"
-    ],
-    "homepage": "https://github.com/iabduul7/filament-auto-translate",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "iabduul7",
-            "role": "Developer"
-        }
-    ],
-    "require": {
-        "php": "^8.2",
-        "filament/filament": "^4.0",
-        "illuminate/contracts": "^11.0 || ^12.0 || ^13.0",
-        "spatie/laravel-package-tools": "^1.16"
-    },
-    "require-dev": {
-        "larastan/larastan": "^2.9 || ^3.0",
-        "laravel/pint": "^1.29",
-        "nunomaduro/collision": "^8.0",
-        "orchestra/testbench": "^9.0 || ^10.0",
-        "pestphp/pest": "^3.0",
-        "pestphp/pest-plugin-laravel": "^3.0"
-    },
-    "autoload": {
-        "psr-4": {
-            "Iabduul7\\FilamentAutoTranslate\\": "src/",
-            "Iabduul7\\FilamentAutoTranslate\\Database\\Factories\\": "database/factories/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Iabduul7\\FilamentAutoTranslate\\Tests\\": "tests/"
-        }
-    },
-    "scripts": {
-        "test": "vendor/bin/pest",
-        "test-coverage": "vendor/bin/pest --coverage",
-        "format": "vendor/bin/pint"
-    },
-    "config": {
-        "sort-packages": true,
-        "allow-plugins": {
-            "pestphp/pest-plugin": true
-        }
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Iabduul7\\FilamentAutoTranslate\\FilamentAutoTranslateServiceProvider"
-            ]
-        }
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+  "name": "iabduul7/filament-auto-transliterate",
+  "description": "Inline, as-you-type transliteration and translation for Filament form inputs. Type Roman Urdu, get Urdu script on space, without leaving the field.",
+  "keywords": [
+    "filament",
+    "laravel",
+    "urdu",
+    "transliteration",
+    "translation",
+    "inline",
+    "input"
+  ],
+  "homepage": "https://github.com/iabduul7/filament-auto-transliterate",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "iabduul7",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "filament/filament": "^4.0 || ^5.0",
+    "illuminate/contracts": "^11.0 || ^12.0 || ^13.0",
+    "spatie/laravel-package-tools": "^1.16"
+  },
+  "require-dev": {
+    "larastan/larastan": "^2.9 || ^3.0",
+    "laravel/pint": "^1.29",
+    "nunomaduro/collision": "^8.0",
+    "orchestra/testbench": "^9.0 || ^10.0",
+    "pestphp/pest": "^3.0",
+    "pestphp/pest-plugin-laravel": "^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Iabduul7\\FilamentAutoTransliterate\\": "src/",
+      "Iabduul7\\FilamentAutoTransliterate\\Database\\Factories\\": "database/factories/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Iabduul7\\FilamentAutoTransliterate\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/pest",
+    "test-coverage": "vendor/bin/pest --coverage",
+    "format": "vendor/bin/pint"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Iabduul7\\FilamentAutoTransliterate\\FilamentAutoTransliterateServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }

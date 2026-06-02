@@ -8,7 +8,7 @@ beforeEach(function () {
 });
 
 it('rejects unauthenticated requests', function () {
-    $this->postJson(route('filament-auto-translate.translate'), ['text' => 'yeh'])
+    $this->postJson(route('filament-auto-transliterate.translate'), ['text' => 'yeh'])
         ->assertUnauthorized();
 });
 
@@ -18,7 +18,7 @@ it('allows authenticated requests', function () {
     ]);
 
     $this->actingAs(new User)
-        ->postJson(route('filament-auto-translate.translate'), [
+        ->postJson(route('filament-auto-transliterate.translate'), [
             'text' => 'yeh',
             'mode' => 'transliterate',
         ])
@@ -28,13 +28,13 @@ it('allows authenticated requests', function () {
 
 it('validates that text is required', function () {
     $this->actingAs(new User)
-        ->postJson(route('filament-auto-translate.translate'), [])
+        ->postJson(route('filament-auto-transliterate.translate'), [])
         ->assertStatus(422);
 });
 
 it('rejects an unknown mode', function () {
     $this->actingAs(new User)
-        ->postJson(route('filament-auto-translate.translate'), [
+        ->postJson(route('filament-auto-transliterate.translate'), [
             'text' => 'yeh',
             'mode' => 'bogus',
         ])
@@ -42,7 +42,7 @@ it('rejects an unknown mode', function () {
 });
 
 it('does not expose the routes under an api prefix', function () {
-    expect(route('filament-auto-translate.translate'))
+    expect(route('filament-auto-transliterate.translate'))
         ->not->toContain('/api/')
-        ->toContain('/filament-auto-translate/translate');
+        ->toContain('/filament-auto-transliterate/translate');
 });

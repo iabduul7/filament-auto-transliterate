@@ -17,30 +17,42 @@ The existing Filament translation plugins are **action-based** (click a button, 
 
 It ships **two distinct modes** and keeps them strictly separate:
 
-| Mode | What it does | On a miss |
-| --- | --- | --- |
+| Mode                      | What it does                                                     | On a miss                  |
+| ------------------------- | ---------------------------------------------------------------- | -------------------------- |
 | `transliterate` (default) | Writes the same sounds in the target script (Roman Urdu to Urdu) | Leaves your text unchanged |
-| `translate` (opt-in) | Converts by meaning (English to Urdu) | Leaves your text unchanged |
+| `translate` (opt-in)      | Converts by meaning (English to Urdu)                            | Leaves your text unchanged |
 
 Transliterate mode **never silently falls through** to meaning-based translation. That separation is the whole point: a phonetic helper that quietly "translates" a word it didn't recognise is worse than one that leaves it alone.
 
 ## Installation
 
 ```bash
-composer require iabduul7/filament-auto-translate
-php artisan migrate
+composer require iabduul7/filament-auto-transliterate
+
+# Publishes the config + migration and offers to run migrations.
+php artisan filament-auto-transliterate:install
+
 php artisan filament:assets
+```
+
+The migration ships as a publishable stub, so use the install command above
+(`php artisan migrate` alone won't create the cache table until the migration is
+published). To publish manually instead:
+
+```bash
+php artisan vendor:publish --tag="filament-auto-transliterate-migrations"
+php artisan migrate
 ```
 
 Add the plugin to a panel:
 
 ```php
-use Iabduul7\FilamentAutoTranslate\FilamentAutoTranslatePlugin;
+use Iabduul7\FilamentAutoTransliterate\FilamentAutoTransliteratePlugin;
 
 public function panel(Panel $panel): Panel
 {
     return $panel
-        ->plugin(FilamentAutoTranslatePlugin::make());
+        ->plugin(FilamentAutoTransliteratePlugin::make());
 }
 ```
 
@@ -67,7 +79,7 @@ Turn the feature on with the header toggle. Focus a marked field, type a Roman w
 Publish the config to customise providers, modes, language, route, and limits:
 
 ```bash
-php artisan vendor:publish --tag="filament-auto-translate-config"
+php artisan vendor:publish --tag="filament-auto-transliterate-config"
 ```
 
 Key options:

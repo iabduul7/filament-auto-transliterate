@@ -1,9 +1,9 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate\Http\Controllers;
+namespace Iabduul7\FilamentAutoTransliterate\Http\Controllers;
 
-use Iabduul7\FilamentAutoTranslate\Models\TranslationCache;
-use Iabduul7\FilamentAutoTranslate\Services\TranslationService;
+use Iabduul7\FilamentAutoTransliterate\Models\TranslationCache;
+use Iabduul7\FilamentAutoTransliterate\Services\TranslationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -16,7 +16,7 @@ class TranslationController extends Controller
 
     public function translate(Request $request): JsonResponse
     {
-        $maxLength = (int) config('filament-auto-translate.max_text_length', 1000);
+        $maxLength = (int) config('filament-auto-transliterate.max_text_length', 1000);
 
         $validator = Validator::make($request->all(), [
             'text' => "required|string|max:{$maxLength}",
@@ -47,8 +47,8 @@ class TranslationController extends Controller
 
     public function batchTranslate(Request $request): JsonResponse
     {
-        $maxLength = (int) config('filament-auto-translate.max_text_length', 1000);
-        $maxBatch = (int) config('filament-auto-translate.max_batch_size', 10);
+        $maxLength = (int) config('filament-auto-transliterate.max_text_length', 1000);
+        $maxBatch = (int) config('filament-auto-transliterate.max_batch_size', 10);
 
         $validator = Validator::make($request->all(), [
             'texts' => "required|array|max:{$maxBatch}",

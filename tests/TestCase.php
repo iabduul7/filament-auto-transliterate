@@ -1,6 +1,6 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate\Tests;
+namespace Iabduul7\FilamentAutoTransliterate\Tests;
 
 use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
 use BladeUI\Icons\BladeIconsServiceProvider;
@@ -13,7 +13,7 @@ use Filament\Schemas\SchemasServiceProvider;
 use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
-use Iabduul7\FilamentAutoTranslate\FilamentAutoTranslateServiceProvider;
+use Iabduul7\FilamentAutoTransliterate\FilamentAutoTransliterateServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
@@ -34,7 +34,7 @@ class TestCase extends Orchestra
             TablesServiceProvider::class,
             WidgetsServiceProvider::class,
             FilamentServiceProvider::class,
-            FilamentAutoTranslateServiceProvider::class,
+            FilamentAutoTransliterateServiceProvider::class,
         ];
     }
 

@@ -1,6 +1,6 @@
 <?php
 
-use Iabduul7\FilamentAutoTranslate\Providers\DictionaryProvider;
+use Iabduul7\FilamentAutoTransliterate\Providers\DictionaryProvider;
 
 beforeEach(function () {
     $this->dictPath = sys_get_temp_dir().'/fat-dict-en-ur.json';
@@ -8,8 +8,8 @@ beforeEach(function () {
         'name' => 'نام',
         'city' => 'شہر',
     ]));
-    config(['filament-auto-translate.dictionary_path' => sys_get_temp_dir().'/fat-dict-en-{target}.json']);
-    config(['filament-auto-translate.dictionary_max_words' => 3]);
+    config(['filament-auto-transliterate.dictionary_path' => sys_get_temp_dir().'/fat-dict-en-{target}.json']);
+    config(['filament-auto-transliterate.dictionary_max_words' => 3]);
 });
 
 afterEach(function () {
@@ -35,7 +35,7 @@ it('fails (rather than partially mangling) when a word is unknown', function () 
 });
 
 it('fails when the phrase exceeds the word limit', function () {
-    config(['filament-auto-translate.dictionary_max_words' => 1]);
+    config(['filament-auto-transliterate.dictionary_max_words' => 1]);
 
     $result = app(DictionaryProvider::class)->translate('name city', 'en', 'ur');
 

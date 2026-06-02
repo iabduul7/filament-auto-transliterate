@@ -39,6 +39,32 @@
     opacity: 0.25;
 }
 
+/* In-field loading spinner. Scoped: only the wrapper that currently hosts a
+   spinner becomes a positioning context, so Filament's input layout is never
+   altered otherwise. */
+.fi-input-wrp.fat-loading-host {
+    position: relative;
+}
+
+.fat-field-spinner {
+    position: absolute;
+    inset-inline-end: 0.625rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+    /* Muted, theme-agnostic tint that reads on a white or dark field. */
+    color: rgb(107 114 128);
+}
+
+.fat-field-spinner svg {
+    height: 1rem;
+    width: 1rem;
+}
+
 @keyframes fat-spin {
     to {
         transform: rotate(360deg);

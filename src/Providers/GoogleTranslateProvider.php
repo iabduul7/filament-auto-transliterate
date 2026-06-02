@@ -1,8 +1,8 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate\Providers;
+namespace Iabduul7\FilamentAutoTransliterate\Providers;
 
-use Iabduul7\FilamentAutoTranslate\Data\TranslationResult;
+use Iabduul7\FilamentAutoTransliterate\Data\TranslationResult;
 use Illuminate\Support\Facades\Http;
 
 /**

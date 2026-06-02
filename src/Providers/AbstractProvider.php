@@ -1,8 +1,8 @@
 <?php
 
-namespace Iabduul7\FilamentAutoTranslate\Providers;
+namespace Iabduul7\FilamentAutoTransliterate\Providers;
 
-use Iabduul7\FilamentAutoTranslate\Contracts\TranslationProvider;
+use Iabduul7\FilamentAutoTransliterate\Contracts\TranslationProvider;
 
 abstract class AbstractProvider implements TranslationProvider
 {
@@ -13,7 +13,7 @@ abstract class AbstractProvider implements TranslationProvider
 
     protected function timeout(): int
     {
-        return (int) config('filament-auto-translate.api_timeout', 5);
+        return (int) config('filament-auto-transliterate.api_timeout', 5);
     }
 
     /**
@@ -26,6 +26,6 @@ abstract class AbstractProvider implements TranslationProvider
 
     protected function config(string $key, mixed $default = null): mixed
     {
-        return config("filament-auto-translate.{$key}", $default);
+        return config("filament-auto-transliterate.{$key}", $default);
     }
 }

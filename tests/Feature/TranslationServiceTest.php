@@ -1,6 +1,6 @@
 <?php
 
-use Iabduul7\FilamentAutoTranslate\Services\TranslationService;
+use Iabduul7\FilamentAutoTransliterate\Services\TranslationService;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -95,7 +95,7 @@ it('caches transliterate and translate of the same word separately', function ()
 });
 
 it('does not transliterate on total failure when the char fallback is disabled', function () {
-    config(['filament-auto-translate.fallback_transliteration' => false]);
+    config(['filament-auto-transliterate.fallback_transliteration' => false]);
     Http::fake(['*' => Http::response('error', 500)]);
 
     $result = service()->translate('zzqq', 'ur', 'translate');
@@ -106,7 +106,7 @@ it('does not transliterate on total failure when the char fallback is disabled',
 });
 
 it('uses the char fallback only when explicitly enabled', function () {
-    config(['filament-auto-translate.fallback_transliteration' => true]);
+    config(['filament-auto-transliterate.fallback_transliteration' => true]);
     Http::fake(['*' => Http::response('error', 500)]);
 
     $result = service()->translate('zzqq', 'ur', 'translate');
