@@ -125,6 +125,10 @@ class FilamentAutoTransliterate {
       // stop the spinner first so no branch can leave it spinning.
       this.stopLoading(input);
 
+      // If the user toggled the feature off while this request was in flight,
+      // don't mutate the field or surface any message — honour the toggle.
+      if (!this.isEnabled) return;
+
       if (!response.ok) {
         this.log(`request failed (status=${response.status})`);
         this.showMessage(
@@ -146,7 +150,10 @@ class FilamentAutoTransliterate {
     } catch (error) {
       this.log(`request exception (${error.message})`);
       this.stopLoading(input);
-      this.showMessage(input, "Translation unavailable.");
+      // Same toggle-off guard for the failure path.
+      if (this.isEnabled) {
+        this.showMessage(input, "Translation unavailable.");
+      }
     }
   }
 
