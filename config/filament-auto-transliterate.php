@@ -6,6 +6,7 @@ use Iabduul7\FilamentAutoTransliterate\Providers\GoogleTranslateProvider;
 use Iabduul7\FilamentAutoTransliterate\Providers\LibreTranslateProvider;
 use Iabduul7\FilamentAutoTransliterate\Providers\MicrosoftProvider;
 use Iabduul7\FilamentAutoTransliterate\Providers\MyMemoryProvider;
+use Iabduul7\FilamentAutoTransliterate\Providers\TransliterationDictionaryProvider;
 
 return [
     // Master switch. When false the ->translatable() macro is a no-op.
@@ -26,10 +27,133 @@ return [
 
     /*
     | If the typed text already matches this pattern it is assumed to be in the
-    | target script and is left untouched (prevents re-converting on edit).
-    | Default matches the Arabic/Urdu Unicode block. Set to null to disable.
+    | target script and is left untouched (prevents re-converting on edit). Null
+    | (the default) defers to the per-language pattern compiled from `languages`
+    | below (see Support\Languages::phpScriptPattern()). Set this to a regex to
+    | force one global override for every target language.
     */
-    'target_script_pattern' => '/[\x{0600}-\x{06FF}]/u',
+    'target_script_pattern' => null,
+
+    /*
+    | The language registry. One authoritative entry per supported target
+    | language, consumed by Support\Languages. `script_ranges` are Unicode block
+    | ranges (hex, inclusive) compiled into both a PHP preg pattern and a JS
+    | regex source — one definition, no dual maintenance. An optional `itc` key
+    | overrides the Google Input Tools input-method code (defaults to
+    | "{code}-t-i0-und") for a language whose live itc code differs.
+    |
+    | Hosts can trim, extend, or re-label this map freely — it's plain config.
+    */
+    'languages' => [
+        'ur' => [
+            'label' => 'Urdu',
+            'native' => 'اردو',
+            'rtl' => true,
+            'script_ranges' => [['0600', '06FF'], ['0750', '077F']],
+        ],
+        'ar' => [
+            'label' => 'Arabic',
+            'native' => 'العربية',
+            'rtl' => true,
+            'script_ranges' => [['0600', '06FF'], ['0750', '077F']],
+        ],
+        'fa' => [
+            'label' => 'Persian',
+            'native' => 'فارسی',
+            'rtl' => true,
+            'script_ranges' => [['0600', '06FF'], ['0750', '077F']],
+        ],
+        'hi' => [
+            'label' => 'Hindi',
+            'native' => 'हिन्दी',
+            'rtl' => false,
+            'script_ranges' => [['0900', '097F']],
+        ],
+        'mr' => [
+            'label' => 'Marathi',
+            'native' => 'मराठी',
+            'rtl' => false,
+            'script_ranges' => [['0900', '097F']],
+        ],
+        'ne' => [
+            'label' => 'Nepali',
+            'native' => 'नेपाली',
+            'rtl' => false,
+            'script_ranges' => [['0900', '097F']],
+        ],
+        'bn' => [
+            'label' => 'Bengali',
+            'native' => 'বাংলা',
+            'rtl' => false,
+            'script_ranges' => [['0980', '09FF']],
+        ],
+        'pa' => [
+            'label' => 'Punjabi',
+            'native' => 'ਪੰਜਾਬੀ',
+            'rtl' => false,
+            'script_ranges' => [['0A00', '0A7F']],
+        ],
+        'gu' => [
+            'label' => 'Gujarati',
+            'native' => 'ગુજરાતી',
+            'rtl' => false,
+            'script_ranges' => [['0A80', '0AFF']],
+        ],
+        'ta' => [
+            'label' => 'Tamil',
+            'native' => 'தமிழ்',
+            'rtl' => false,
+            'script_ranges' => [['0B80', '0BFF']],
+        ],
+        'te' => [
+            'label' => 'Telugu',
+            'native' => 'తెలుగు',
+            'rtl' => false,
+            'script_ranges' => [['0C00', '0C7F']],
+        ],
+        'kn' => [
+            'label' => 'Kannada',
+            'native' => 'ಕನ್ನಡ',
+            'rtl' => false,
+            'script_ranges' => [['0C80', '0CFF']],
+        ],
+        'ml' => [
+            'label' => 'Malayalam',
+            'native' => 'മലയാളം',
+            'rtl' => false,
+            'script_ranges' => [['0D00', '0D7F']],
+        ],
+        'si' => [
+            'label' => 'Sinhala',
+            'native' => 'සිංහල',
+            'rtl' => false,
+            'script_ranges' => [['0D80', '0DFF']],
+        ],
+        'ru' => [
+            'label' => 'Russian',
+            'native' => 'Русский',
+            'rtl' => false,
+            'script_ranges' => [['0400', '04FF']],
+        ],
+        'el' => [
+            'label' => 'Greek',
+            'native' => 'Ελληνικά',
+            'rtl' => false,
+            'script_ranges' => [['0370', '03FF']],
+        ],
+        'am' => [
+            'label' => 'Amharic',
+            'native' => 'አማርኛ',
+            'rtl' => false,
+            'script_ranges' => [['1200', '137F']],
+        ],
+        'he' => [
+            'label' => 'Hebrew',
+            'native' => 'עברית',
+            'rtl' => true,
+            'script_ranges' => [['0590', '05FF']],
+        ],
+    ],
 
     // HTTP endpoint registration. Auth-gated by default — these routes proxy to
     // external translation APIs and must not be public.
@@ -55,6 +179,7 @@ return [
     'provider_map' => [
         'google_input_tools' => GoogleInputToolsProvider::class,
         'dictionary' => DictionaryProvider::class,
+        'transliterate_dictionary' => TransliterationDictionaryProvider::class,
         'mymemory' => MyMemoryProvider::class,
         'libretranslate' => LibreTranslateProvider::class,
         'microsoft' => MicrosoftProvider::class,
@@ -63,10 +188,12 @@ return [
 
     /*
     | Ordered fallback chain per mode. The lists are intentionally separate so a
-    | transliterate request can never reach a meaning-based provider.
+    | transliterate request can never reach a meaning-based provider. The local
+    | transliteration dictionary is checked before the network provider — zero
+    | cost, and it's where domain vocabulary (names, honorifics) lives.
     */
     'providers' => [
-        'transliterate' => ['google_input_tools'],
+        'transliterate' => ['transliterate_dictionary', 'google_input_tools'],
         'translate' => ['dictionary', 'mymemory', 'libretranslate', 'microsoft', 'google'],
     ],
 
@@ -86,9 +213,41 @@ return [
     'dictionary_path' => env('FILAMENT_AUTO_TRANSLITERATE_DICTIONARY', null),
     'dictionary_max_words' => 3,
 
+    /*
+    | Separate dictionary for transliterate mode (a { "roman word": "target
+    | script word" } map, {target} placeholder supported). Kept apart from
+    | `dictionary_path` above so a meaning-glossary can never answer a phonetic
+    | query. Null (the default) makes the provider report unconfigured and skip
+    | — zero cost when unused.
+    */
+    'transliterate_dictionary_path' => env('FILAMENT_AUTO_TRANSLITERATE_TRANSLITERATE_DICTIONARY', null),
+
+    // Number of candidates requested from Google Input Tools per word. The
+    // first is applied; the rest are exposed as `alternatives` for future
+    // candidate-picker UI. Same request cost regardless of the count.
+    'suggestions_per_word' => env('FILAMENT_AUTO_TRANSLITERATE_SUGGESTIONS', 4),
+
+    /*
+    | Circuit breaker for flaky free providers. After this many consecutive
+    | failures a provider is skipped (not retried) for the cooldown window,
+    | so a dead endpoint doesn't cost a timeout on every single request.
+    */
+    'provider_failure_threshold' => env('FILAMENT_AUTO_TRANSLITERATE_FAILURE_THRESHOLD', 3),
+    'provider_failure_cooldown' => env('FILAMENT_AUTO_TRANSLITERATE_FAILURE_COOLDOWN', 120),
+
     'min_text_length' => 2,
     'max_text_length' => 1000,
     'max_batch_size' => 10,
+
+    /*
+    | Learning from corrections (see docs/02-self-improvement.md). When a user
+    | fixes an applied word, the pair is stored as a `user_correction` cache row
+    | that outranks provider output forever after. Kill switch: when false the
+    | /learn route 404s and the JS overlay never sends a correction.
+    */
+    'learn' => [
+        'enabled' => env('FILAMENT_AUTO_TRANSLITERATE_LEARN_ENABLED', true),
+    ],
 
     /*
     | Crude char-by-char transliteration when every provider fails. OFF by
