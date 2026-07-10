@@ -1,18 +1,16 @@
 # Planning documents
 
-Design plans for the next major iteration of Filament Auto Transliterate. Nothing in
-this folder is implemented yet unless a document says so — these are blueprints,
-written against the codebase as of v0.1.0.
+Design plans for Filament Auto Transliterate, written against the codebase as of
+v0.1.0. Status is tracked per document below.
 
-| Doc | Covers |
-| --- | ------ |
-| [01-multi-language.md](01-multi-language.md) | First-class language→language transliteration: the language registry, per-language script detection, per-field target pinning, API/config changes |
-| [02-self-improvement.md](02-self-improvement.md) | How the package learns from user corrections and gets better over time |
-| [03-language-switch-ui.md](03-language-switch-ui.md) | UI for presenting and switching the target language (header dropdown, field pins, RTL, a11y) |
-| [04-free-tier-quality.md](04-free-tier-quality.md) | Getting better transliteration out of free services: corrections-first cache, local dictionaries, candidates, circuit breaker, client-side de-dup |
-| [05-monetization.md](05-monetization.md) | Proposed free vs. paid tier split |
+| Doc | Covers | Status |
+| --- | ------ | ------ |
+| [01-multi-language.md](01-multi-language.md) | First-class language→language transliteration: the language registry, per-language script detection, per-field target pinning, API/config changes | ✅ implemented |
+| [02-self-improvement.md](02-self-improvement.md) | How the package learns from user corrections and gets better over time | ✅ implemented (corrections loop; follow-ups §"Beyond corrections" items 2–4 remain) |
+| [03-language-switch-ui.md](03-language-switch-ui.md) | UI for presenting and switching the target language (header dropdown, field pins, RTL, a11y) | ✅ implemented |
+| [04-free-tier-quality.md](04-free-tier-quality.md) | Getting better transliteration out of free services: corrections-first cache, local dictionaries, candidates, circuit breaker, client-side de-dup | ✅ implemented (alternatives are plumbed through the API; the candidate-picker UI remains) |
+| [05-monetization.md](05-monetization.md) | Proposed free vs. paid tier split | 📋 proposal — no code intended in this repo |
 
-Suggested implementation order: **01 → 03 → 04 → 02**. The language registry (01)
-is the foundation the UI (03) and quality work (04) build on; the learning loop (02)
-touches everything, so it lands last. The monetization split (05) informs where
-feature flags go but requires no code up front.
+Implementation deviations from the specs are noted in the CHANGELOG's Unreleased
+section; one deliberate deferral: the per-mode `api_timeout` split suggested in
+doc 04 was left out (single global timeout kept) pending a config-shape decision.
