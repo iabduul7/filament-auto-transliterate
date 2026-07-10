@@ -5,12 +5,15 @@ namespace Iabduul7\FilamentAutoTransliterate;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 use Filament\View\PanelsRenderHook;
+use Iabduul7\FilamentAutoTransliterate\Support\Languages;
 
 class FilamentAutoTransliteratePlugin implements Plugin
 {
     protected bool $showToggle = true;
 
     protected bool $injectCsrfMeta = true;
+
+    protected bool $languageSwitcher = true;
 
     public function getId(): string
     {
@@ -51,6 +54,18 @@ class FilamentAutoTransliteratePlugin implements Plugin
         return $this;
     }
 
+    /**
+     * Show or hide the header language chip/dropdown (next to the on/off
+     * toggle). Only relevant when more than one language is configured — see
+     * resources/views/hooks/toggle.blade.php.
+     */
+    public function languageSwitcher(bool $condition = true): static
+    {
+        $this->languageSwitcher = $condition;
+
+        return $this;
+    }
+
     public function register(Panel $panel): void
     {
         if ($this->injectCsrfMeta) {
@@ -60,10 +75,24 @@ class FilamentAutoTransliteratePlugin implements Plugin
             );
         }
 
+        // Language table + defaults for the frontend (overlay + header switcher).
+        // Injected at HEAD_END so it exists before the Filament-registered asset
+        // bundle executes, regardless of load order.
+        $panel->renderHook(
+            PanelsRenderHook::HEAD_END,
+            fn (): string => '<script>window.fatConfig = '.json_encode([
+                'languages' => Languages::forJs(),
+                'defaultTarget' => config('filament-auto-transliterate.target_language', 'ur'),
+                'learnEnabled' => config('filament-auto-transliterate.learn.enabled', true),
+            ]).';</script>',
+        );
+
         if ($this->showToggle) {
             $panel->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
-                fn (): string => view('filament-auto-transliterate::hooks.toggle')->render(),
+                fn (): string => view('filament-auto-transliterate::hooks.toggle', [
+                    'languageSwitcher' => $this->languageSwitcher,
+                ])->render(),
             );
         }
     }
