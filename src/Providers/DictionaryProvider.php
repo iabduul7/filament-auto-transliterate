@@ -23,6 +23,16 @@ class DictionaryProvider extends AbstractProvider
         return $this->resolvePath(config('filament-auto-transliterate.target_language', 'ur')) !== null;
     }
 
+    /**
+     * The config key holding this dictionary's file path. Overridden by
+     * subclasses (e.g. TransliterationDictionaryProvider) that read a
+     * separate file so a meaning-glossary can never answer a phonetic query.
+     */
+    protected function pathConfigKey(): string
+    {
+        return 'dictionary_path';
+    }
+
     public function key(): string
     {
         return 'dictionary';
@@ -86,7 +96,7 @@ class DictionaryProvider extends AbstractProvider
 
     private function resolvePath(string $targetLang): ?string
     {
-        $path = $this->config('dictionary_path');
+        $path = $this->config($this->pathConfigKey());
 
         if (! is_string($path) || $path === '') {
             return null;

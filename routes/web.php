@@ -17,6 +17,7 @@ Route::prefix($config['prefix'] ?? 'filament-auto-transliterate')
     ->group(function () {
         Route::post('/translate', [TranslationController::class, 'translate'])->name('translate');
         Route::post('/batch-translate', [TranslationController::class, 'batchTranslate'])->name('batch');
+        Route::post('/learn', [TranslationController::class, 'learn'])->name('learn');
         Route::get('/provider-status', [TranslationController::class, 'providerStatus'])->name('status');
         Route::get('/stats', [TranslationController::class, 'stats'])->name('stats');
     });

@@ -16,13 +16,19 @@ final class TranslationResult
         public readonly ?string $original = null,
         public readonly ?string $error = null,
         public readonly ?string $message = null,
+        /** @var list<string> extra candidates beyond the applied translation (doc 04) */
+        public readonly array $alternatives = [],
     ) {}
 
+    /**
+     * @param  list<string>  $alternatives
+     */
     public static function success(
         string $translated,
         string $source,
         float $confidence = 0.8,
         float $processingTime = 0.0,
+        array $alternatives = [],
     ): self {
         return new self(
             success: true,
@@ -30,6 +36,7 @@ final class TranslationResult
             source: $source,
             confidence: $confidence,
             processingTime: $processingTime,
+            alternatives: $alternatives,
         );
     }
 
@@ -70,6 +77,7 @@ final class TranslationResult
             'processing_time' => $this->processingTime,
             'original' => $this->original,
             'message' => $this->message,
+            'alternatives' => $this->alternatives,
         ];
     }
 }

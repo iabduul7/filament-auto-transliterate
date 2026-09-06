@@ -50,6 +50,39 @@ it('honours an explicit translate mode', function () {
     expect($config['mode'])->toBe('translate');
 });
 
+it('follows the global target by default, unpinned', function () {
+    $input = TextInput::make('name')->translatable();
+
+    $config = json_decode($input->getExtraInputAttributes()['data-fat-config'], true);
+
+    expect($config['targetPinned'])->toBeFalse()
+        ->and($config)->toHaveKey('learnEndpoint')
+        ->and($config['learnEndpoint'])->toContain('filament-auto-transliterate/learn')
+        ->and($input->getExtraInputAttributes())->not->toHaveKey('data-fat-pinned');
+});
+
+it('pins a field to an explicit target language', function () {
+    $input = TextInput::make('name_hi')->translatable(target: 'hi');
+
+    $attributes = $input->getExtraInputAttributes();
+    $config = json_decode($attributes['data-fat-config'], true);
+
+    expect($config['targetLang'])->toBe('hi')
+        ->and($config['targetPinned'])->toBeTrue()
+        ->and($attributes['data-fat-pinned'] ?? null)->toBe('hi');
+});
+
+it('resolves an unknown pinned target to the configured default', function () {
+    config(['filament-auto-transliterate.target_language' => 'ur']);
+
+    $input = TextInput::make('name')->translatable(target: 'not-a-real-language');
+
+    $config = json_decode($input->getExtraInputAttributes()['data-fat-config'], true);
+
+    expect($config['targetLang'])->toBe('ur')
+        ->and($config['targetPinned'])->toBeTrue();
+});
+
 it('is a no-op when disabled via the argument', function () {
     $input = TextInput::make('name')->autoTransliterate(false);
 

@@ -2,7 +2,7 @@
 
 Inline, as-you-type transliteration and translation for [Filament](https://filamentphp.com) form inputs.
 
-Type Roman Urdu, press space, and the word is rewritten in Urdu script — without leaving the field, opening a modal, or switching keyboards. Built for data-entry teams who think in Urdu but type on a Latin keyboard.
+Type Roman Urdu, press space, and the word is rewritten in Urdu script — without leaving the field, opening a modal, or switching keyboards. Built for data-entry teams who think in Urdu (or Hindi, Arabic, Persian, …) but type on a Latin keyboard. 10 target languages ship out of the box, switchable from the panel header.
 
 ```
 receiver  ->  ریسیور        (transliterate: same sounds, Urdu script)
@@ -70,9 +70,22 @@ TextInput::make('receiver_name')
 
 TextInput::make('description')
     ->translatable(mode: 'translate'); // convert by meaning instead
+
+TextInput::make('name_hi')
+    ->translatable(target: 'hi');      // pinned to Hindi, ignores the header switcher
 ```
 
 Turn the feature on with the header toggle. Focus a marked field, type a Roman word, press space — done. State persists per browser.
+
+### Switching languages
+
+When more than one language is configured, a language chip appears next to the header toggle showing the active language's native name (e.g. اردو). Click it to switch; the choice persists per browser. Fields pinned with `->translatable(target: ...)` show a badge and always use their pinned language. Hide the chip with `->languageSwitcher(false)` on the plugin.
+
+10 languages ship enabled by default — Urdu, Arabic, Persian, Hindi, Marathi, Punjabi, Bengali, Nepali, Russian, and Greek. Trim or extend the list via the `languages` config key (each entry carries its label, native name, RTL flag, and Unicode script ranges used to detect already-converted text) — any other language Google Input Tools supports (Gujarati, Tamil, Telugu, Kannada, Malayalam, Sinhala, Amharic, Hebrew, …) is one config entry away.
+
+### It learns from corrections
+
+When a user fixes a word the package applied (e.g. it wrote مکن and they correct it to مکان), the correction is stored — authenticated and validated — as a high-confidence cache entry that wins over provider output on every future request. The more the package is used, the better and faster it gets, at zero API cost. Disable with `'learn' => ['enabled' => false]`.
 
 ## Configuration
 
@@ -85,24 +98,32 @@ php artisan vendor:publish --tag="filament-auto-transliterate-config"
 Key options:
 
 - **`mode`** — global default (`transliterate` or `translate`).
-- **`target_language`** — defaults to `ur`. The architecture is language-agnostic; v1 ships Urdu defaults.
+- **`target_language`** — the default target (defaults to `ur`); users can switch via the header chip, and fields can pin their own.
+- **`languages`** — the language registry: which targets are offered, their native names, RTL flags, and script-detection ranges.
 - **`providers.transliterate` / `providers.translate`** — the ordered fallback chain for each mode. The lists are separate by design.
 - **`provider_map`** — register your own provider (implement `Contracts\TranslationProvider`) and add its key to a chain.
+- **`learn.enabled`** — the learn-from-correction loop (on by default).
 - **`route.middleware`** — the endpoint is `['web', 'auth']` and throttled by default. It proxies to external translation APIs, so keep it authenticated.
 
 ### Providers
 
-Out of the box: Google Input Tools (transliteration), and MyMemory, LibreTranslate, Microsoft, Google plus a local JSON dictionary (translation). Unconfigured providers (missing API keys) are skipped automatically. Every successful conversion is cached permanently in the database, so repeats are instant and free.
+Out of the box: Google Input Tools (transliteration), and MyMemory, LibreTranslate, Microsoft, Google plus local JSON dictionaries. Unconfigured providers (missing API keys) are skipped automatically. Every successful conversion is cached permanently in the database, so repeats are instant and free — and user corrections outrank everything.
 
-### Local dictionary
+Free-service resilience is built in: a provider that fails `provider_failure_threshold` times in a row is skipped for `provider_failure_cooldown` seconds instead of eating a timeout per word, the client de-duplicates concurrent requests, remembers misses for the session, and backs off after a 429.
 
-Point `dictionary_path` at a JSON file of `{ "source word": "target word" }`. Use a `{target}` placeholder to ship one file per language:
+### Local dictionaries
+
+Two separate files, one per mode (so a meaning-glossary can never answer a phonetic query):
 
 ```php
+// translate mode: meanings
 'dictionary_path' => resource_path('dictionaries/en-{target}.json'),
+
+// transliterate mode: romanization → script, checked before any network provider
+'transliterate_dictionary_path' => resource_path('dictionaries/roman-{target}.json'),
 ```
 
-The dictionary is checked before any network provider and only returns a hit when every word of a short phrase is known, so it never partially mangles input.
+Both are `{ "source word": "target word" }` JSON maps with a `{target}` placeholder to ship one file per language. A dictionary only returns a hit when every word of a short phrase is known, so it never partially mangles input.
 
 ## Building assets (contributors)
 
@@ -121,10 +142,13 @@ composer test
 
 ## Roadmap
 
-- Learn-from-correction: when a user fixes an applied word, remember it next time.
-- Client-side fast path for the most common words (no network round-trip).
-- A cache-management Filament resource.
-- First-class support for additional target languages and scripts.
+Design documents for shipped and upcoming work live in [`docs/`](docs/).
+
+- ~~Learn-from-correction~~ — shipped (see above).
+- ~~First-class support for additional target languages and scripts~~ — shipped (10 languages + header switcher).
+- Client-side preload of the most common learned words (no network round-trip at all).
+- Candidate picker UI for Google Input Tools alternatives (the API plumbing already returns them).
+- A cache/glossary-management Filament resource.
 
 ## License
 
