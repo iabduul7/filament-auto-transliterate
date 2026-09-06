@@ -2,7 +2,7 @@
 
 Inline, as-you-type transliteration and translation for [Filament](https://filamentphp.com) form inputs.
 
-Type Roman Urdu, press space, and the word is rewritten in Urdu script — without leaving the field, opening a modal, or switching keyboards. Built for data-entry teams who think in Urdu (or Hindi, Arabic, Tamil, …) but type on a Latin keyboard. 18 target languages ship out of the box, switchable from the panel header.
+Type Roman Urdu, press space, and the word is rewritten in Urdu script — without leaving the field, opening a modal, or switching keyboards. Built for data-entry teams who think in Urdu (or Hindi, Arabic, Persian, …) but type on a Latin keyboard. 10 target languages ship out of the box, switchable from the panel header.
 
 ```
 receiver  ->  ریسیور        (transliterate: same sounds, Urdu script)
@@ -81,7 +81,7 @@ Turn the feature on with the header toggle. Focus a marked field, type a Roman w
 
 When more than one language is configured, a language chip appears next to the header toggle showing the active language's native name (e.g. اردو). Click it to switch; the choice persists per browser. Fields pinned with `->translatable(target: ...)` show a badge and always use their pinned language. Hide the chip with `->languageSwitcher(false)` on the plugin.
 
-18 languages ship enabled by default — Urdu, Arabic, Persian, Hindi, Marathi, Nepali, Bengali, Punjabi, Gujarati, Tamil, Telugu, Kannada, Malayalam, Sinhala, Russian, Greek, Amharic, and Hebrew. Trim or extend the list via the `languages` config key (each entry carries its label, native name, RTL flag, and Unicode script ranges used to detect already-converted text).
+10 languages ship enabled by default — Urdu, Arabic, Persian, Hindi, Marathi, Punjabi, Bengali, Nepali, Russian, and Greek. Trim or extend the list via the `languages` config key (each entry carries its label, native name, RTL flag, and Unicode script ranges used to detect already-converted text) — any other language Google Input Tools supports (Gujarati, Tamil, Telugu, Kannada, Malayalam, Sinhala, Amharic, Hebrew, …) is one config entry away.
 
 ### It learns from corrections
 
@@ -145,7 +145,7 @@ composer test
 Design documents for shipped and upcoming work live in [`docs/`](docs/).
 
 - ~~Learn-from-correction~~ — shipped (see above).
-- ~~First-class support for additional target languages and scripts~~ — shipped (18 languages + header switcher).
+- ~~First-class support for additional target languages and scripts~~ — shipped (10 languages + header switcher).
 - Client-side preload of the most common learned words (no network round-trip at all).
 - Candidate picker UI for Google Input Tools alternatives (the API plumbing already returns them).
 - A cache/glossary-management Filament resource.

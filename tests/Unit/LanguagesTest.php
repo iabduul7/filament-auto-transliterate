@@ -11,8 +11,8 @@ use Iabduul7\FilamentAutoTransliterate\Support\Languages;
 
 it('lists all configured language codes', function () {
     expect(Languages::codes())
-        ->toContain('ur', 'ar', 'fa', 'hi', 'mr', 'ne', 'bn', 'pa', 'gu', 'ta', 'te', 'kn', 'ml', 'si', 'ru', 'el', 'am', 'he')
-        ->toHaveCount(18);
+        ->toContain('ur', 'ar', 'fa', 'hi', 'mr', 'ne', 'bn', 'pa', 'ru', 'el')
+        ->toHaveCount(10);
 });
 
 it('resolves a known code to itself', function () {
@@ -58,7 +58,7 @@ it('compiles a JS regex source of literal characters, not \u escapes', function 
 
 it('reports rtl correctly per language', function () {
     expect(Languages::isRtl('ur'))->toBeTrue()
-        ->and(Languages::isRtl('he'))->toBeTrue()
+        ->and(Languages::isRtl('fa'))->toBeTrue()
         ->and(Languages::isRtl('hi'))->toBeFalse()
         ->and(Languages::isRtl('unknown'))->toBeFalse();
 });

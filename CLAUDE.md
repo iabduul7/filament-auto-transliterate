@@ -2,7 +2,7 @@
 
 Open-source Filament plugin: inline, as-you-type transliteration/translation for form inputs. Type Roman Urdu, get Urdu script on the spacebar, without leaving the field. Extracted from the `malik-and-brothers-goods` app. It is a **keyboard-style input helper**, not a content-translation workflow.
 
-- **Identity:** package `iabduul7/filament-auto-transliterate`, namespace `Iabduul7\FilamentAutoTransliterate`. Published on Packagist (v0.1.0). Supports `filament/filament: ^4.0 || ^5.0`, PHP 8.2+.
+- **Identity:** package `iabduul7/filament-auto-transliterate`, namespace `Iabduul7\FilamentAutoTransliterate`. Published on Packagist (latest v0.2.0). Supports `filament/filament: ^4.0 || ^5.0`, PHP 8.2+.
 - **GitHub:** `https://github.com/iabduul7/filament-auto-transliterate`.
 
 ## Repo / release workflow
@@ -27,7 +27,7 @@ Open-source Filament plugin: inline, as-you-type transliteration/translation for
 - Two strictly-separated modes: `transliterate` (default — same sounds in target script; on a miss leaves text unchanged) and `translate` (by meaning, opt-in). **Transliterate must NEVER silently fall through to translation** — separate provider chains (`config('...providers.transliterate')` vs `...providers.translate')`). Tests assert this; keep them passing.
 
 ## Languages
-- `Support\Languages` is the registry over the `languages` config map (18 targets by default). Script ranges are defined once as hex range pairs and compiled to both a PHP preg pattern and a JS regex source — never hand-write per-engine regexes elsewhere.
+- `Support\Languages` is the registry over the `languages` config map (10 targets by default: ur ar fa hi mr pa bn ne ru el — trimmed deliberately; more are one config entry away). Script ranges are defined once as hex range pairs and compiled to both a PHP preg pattern and a JS regex source — never hand-write per-engine regexes elsewhere.
 - Target resolution: `Languages::resolve()` maps unknown codes to the configured default; controllers additionally 422 on unknown `target_lang`. `target_script_pattern` (default `null`) is a global detection override, kept for back-compat.
 - The frontend gets the table via the `window.fatConfig` script injected at `HEAD_END` by the plugin.
 
