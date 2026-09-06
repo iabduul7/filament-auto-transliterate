@@ -106,6 +106,29 @@ it('updates an existing row in place rather than duplicating', function () {
         ->and(TranslationCache::getTranslation('rent', 'ur', 'transliterate')->translated_text)->toBe('کرایہ-v2');
 });
 
+it('never lets a non-correction source overwrite a stored user correction', function () {
+    TranslationCache::cacheTranslation('mkan', 'مکان', 'ur', 'user_correction', 0.99, 0.0, 'transliterate');
+
+    // A provider (or dictionary) result for the same text/target/mode must not
+    // clobber the ground-truth correction (docs/02-self-improvement.md).
+    TranslationCache::cacheTranslation('mkan', 'مکن', 'ur', 'google_input_tools', 0.95, 1.0, 'transliterate');
+
+    $row = TranslationCache::getTranslation('mkan', 'ur', 'transliterate');
+
+    expect($row->translated_text)->toBe('مکان')
+        ->and($row->source)->toBe('user_correction');
+});
+
+it('lets a newer user correction replace an older one', function () {
+    TranslationCache::cacheTranslation('mkan', 'مکن', 'ur', 'user_correction', 0.99, 0.0, 'transliterate');
+    TranslationCache::cacheTranslation('mkan', 'مکان', 'ur', 'user_correction', 0.99, 0.0, 'transliterate');
+
+    $row = TranslationCache::getTranslation('mkan', 'ur', 'transliterate');
+
+    expect($row->translated_text)->toBe('مکان')
+        ->and(TranslationCache::count())->toBe(1);
+});
+
 it('backfills a null original_text_hash on the next save', function () {
     // Simulate a legacy/adopted row that predates the hash population (e.g. a
     // host's existing table). Insert without going through the model hook.

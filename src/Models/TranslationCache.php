@@ -114,6 +114,13 @@ class TranslationCache extends Model
             'mode' => $mode,
         ]);
 
+        // A `user_correction` row is ground truth from a native speaker (see
+        // docs/02-self-improvement.md) — a provider or dictionary result must
+        // never clobber it. A newer correction may still replace an older one.
+        if ($model->exists && $model->source === 'user_correction' && $source !== 'user_correction') {
+            return $model;
+        }
+
         $model->fill([
             'translated_text' => $translatedText,
             'source' => $source,
