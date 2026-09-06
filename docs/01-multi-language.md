@@ -71,21 +71,15 @@ Everything below is supported by Google Input Tools' transliteration itc codes
 | ne | Nepali | नेपाली | 0900–097F | no |
 | bn | Bengali | বাংলা | 0980–09FF | no |
 | pa | Punjabi | ਪੰਜਾਬੀ | 0A00–0A7F (Gurmukhi) | no |
-| gu | Gujarati | ગુજરાતી | 0A80–0AFF | no |
-| ta | Tamil | தமிழ் | 0B80–0BFF | no |
-| te | Telugu | తెలుగు | 0C00–0C7F | no |
-| kn | Kannada | ಕನ್ನಡ | 0C80–0CFF | no |
-| ml | Malayalam | മലയാളം | 0D00–0D7F | no |
-| si | Sinhala | සිංහල | 0D80–0DFF | no |
 | ru | Russian | Русский | 0400–04FF (Cyrillic) | no |
 | el | Greek | Ελληνικά | 0370–03FF | no |
-| am | Amharic | አማርኛ | 1200–137F (Ethiopic) | no |
-| he | Hebrew | עברית | 0590–05FF | yes |
 
-Implementation note: verify each itc code against the live Input Tools endpoint
-before shipping — a couple use legacy codes (Hebrew has historically been `iw` in
-Google APIs). If any differ, add an optional `itc` override field per language entry
-that `GoogleInputToolsProvider` prefers over `"{code}-t-i0-und"`.
+The shipped set was deliberately trimmed to these ten before the v0.2.0 release
+(Gujarati, Tamil, Telugu, Kannada, Malayalam, Sinhala, Amharic, and Hebrew were
+dropped from the defaults). Their Input Tools itc codes work, so a host can add any
+of them back with a single config entry — Hebrew being the one to double-check,
+since it has historically been `iw` in Google APIs; the optional per-language
+`itc` override exists for exactly that case.
 
 Hosts can trim, extend, or re-label this map freely — it's plain config, and
 `provider_map` already lets them register custom providers for languages Google

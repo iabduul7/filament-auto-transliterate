@@ -11,6 +11,6 @@ v0.1.0. Status is tracked per document below.
 | [04-free-tier-quality.md](04-free-tier-quality.md) | Getting better transliteration out of free services: corrections-first cache, local dictionaries, candidates, circuit breaker, client-side de-dup | ✅ implemented (alternatives are plumbed through the API; the candidate-picker UI remains) |
 | [05-monetization.md](05-monetization.md) | Proposed free vs. paid tier split | 📋 proposal — no code intended in this repo |
 
-Implementation deviations from the specs are noted in the CHANGELOG's Unreleased
-section; one deliberate deferral: the per-mode `api_timeout` split suggested in
+Implementation deviations from the specs are noted in the CHANGELOG's v0.2.0
+section (the shipped language set was trimmed to ten defaults, see doc 01); one deliberate deferral: the per-mode `api_timeout` split suggested in
 doc 04 was left out (single global timeout kept) pending a config-shape decision.

@@ -93,42 +93,6 @@ return [
             'rtl' => false,
             'script_ranges' => [['0A00', '0A7F']],
         ],
-        'gu' => [
-            'label' => 'Gujarati',
-            'native' => 'ગુજરાતી',
-            'rtl' => false,
-            'script_ranges' => [['0A80', '0AFF']],
-        ],
-        'ta' => [
-            'label' => 'Tamil',
-            'native' => 'தமிழ்',
-            'rtl' => false,
-            'script_ranges' => [['0B80', '0BFF']],
-        ],
-        'te' => [
-            'label' => 'Telugu',
-            'native' => 'తెలుగు',
-            'rtl' => false,
-            'script_ranges' => [['0C00', '0C7F']],
-        ],
-        'kn' => [
-            'label' => 'Kannada',
-            'native' => 'ಕನ್ನಡ',
-            'rtl' => false,
-            'script_ranges' => [['0C80', '0CFF']],
-        ],
-        'ml' => [
-            'label' => 'Malayalam',
-            'native' => 'മലയാളം',
-            'rtl' => false,
-            'script_ranges' => [['0D00', '0D7F']],
-        ],
-        'si' => [
-            'label' => 'Sinhala',
-            'native' => 'සිංහල',
-            'rtl' => false,
-            'script_ranges' => [['0D80', '0DFF']],
-        ],
         'ru' => [
             'label' => 'Russian',
             'native' => 'Русский',
@@ -140,18 +104,6 @@ return [
             'native' => 'Ελληνικά',
             'rtl' => false,
             'script_ranges' => [['0370', '03FF']],
-        ],
-        'am' => [
-            'label' => 'Amharic',
-            'native' => 'አማርኛ',
-            'rtl' => false,
-            'script_ranges' => [['1200', '137F']],
-        ],
-        'he' => [
-            'label' => 'Hebrew',
-            'native' => 'עברית',
-            'rtl' => true,
-            'script_ranges' => [['0590', '05FF']],
         ],
     ],
 
