@@ -3,7 +3,6 @@
 namespace Iabduul7\FilamentAutoTransliterate\Providers;
 
 use Iabduul7\FilamentAutoTransliterate\Data\TranslationResult;
-use Illuminate\Support\Facades\Http;
 
 /**
  * Google Cloud Translation v2 — paid, meaning-based translation.
@@ -22,29 +21,43 @@ class GoogleTranslateProvider extends AbstractProvider
 
     public function translate(string $text, string $sourceLang, string $targetLang): TranslationResult
     {
-        $startTime = microtime(true);
+        return $this->guard(function () use ($text, $sourceLang, $targetLang): TranslationResult {
+            $startTime = microtime(true);
 
-        $response = Http::timeout($this->timeout())->post('https://translation.googleapis.com/language/translate/v2', [
-            'key' => (string) $this->config('google_api_key'),
-            'q' => $text,
-            'source' => $sourceLang,
-            'target' => $targetLang,
-            'format' => 'text',
-        ]);
+            // v2 convention: the API key travels as a query parameter, not in
+            // the JSON body.
+            $url = 'https://translation.googleapis.com/language/translate/v2?'.http_build_query([
+                'key' => (string) $this->config('google_api_key'),
+            ]);
 
-        if ($response->successful()) {
-            $data = $response->json();
+            $response = $this->http()->post($url, [
+                'q' => $text,
+                'source' => $sourceLang,
+                'target' => $targetLang,
+                'format' => 'text',
+            ]);
 
-            if (! empty($data['data']['translations'][0]['translatedText'])) {
-                return TranslationResult::success(
-                    translated: $data['data']['translations'][0]['translatedText'],
-                    source: $this->key(),
-                    confidence: (float) ($data['data']['translations'][0]['confidence'] ?? 0.9),
-                    processingTime: $this->elapsed($startTime),
-                );
+            if ($error = $this->httpError($response, 'Google Translate')) {
+                return $error;
             }
-        }
 
-        return TranslationResult::failure('Google Translate API failed');
+            $data = $response->json();
+            $translation = is_array($data) ? ($data['data']['translations'][0] ?? null) : null;
+
+            if (! is_array($translation) || ! isset($translation['translatedText']) || ! is_string($translation['translatedText'])) {
+                return TranslationResult::failure('Google Translate returned a malformed response');
+            }
+
+            if (trim($translation['translatedText']) === '') {
+                return TranslationResult::miss('Google Translate returned an empty translation');
+            }
+
+            return TranslationResult::success(
+                translated: $translation['translatedText'],
+                source: $this->key(),
+                confidence: (float) ($translation['confidence'] ?? 0.9),
+                processingTime: $this->elapsed($startTime),
+            );
+        });
     }
 }

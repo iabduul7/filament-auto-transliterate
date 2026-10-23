@@ -1,0 +1,21 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+    tmpDir: build/phpstan
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # Macro closures are bound to the Filament component at runtime
+        # (Macroable::macro), so $this is valid there but invisible to PHPStan.
+        -
+            identifier: variable.undefined
+            path: src/Macros/TranslatableMacro.php
+        -
+            identifier: varTag.variableNotFound
+            path: src/Macros/TranslatableMacro.php
+        -
+            identifier: varTag.trait
+            path: src/Macros/TranslatableMacro.php

@@ -3,7 +3,6 @@
 namespace Iabduul7\FilamentAutoTransliterate\Providers;
 
 use Iabduul7\FilamentAutoTransliterate\Data\TranslationResult;
-use Illuminate\Support\Facades\Http;
 
 /**
  * LibreTranslate — self-hosted, open-source meaning-based translation.
@@ -22,31 +21,46 @@ class LibreTranslateProvider extends AbstractProvider
 
     public function translate(string $text, string $sourceLang, string $targetLang): TranslationResult
     {
-        $startTime = microtime(true);
+        return $this->guard(function () use ($text, $sourceLang, $targetLang): TranslationResult {
+            $startTime = microtime(true);
 
-        $endpoint = rtrim((string) $this->config('libretranslate_url', 'http://localhost:5000'), '/');
+            $endpoint = rtrim((string) $this->config('libretranslate_url', 'http://localhost:5000'), '/');
 
-        $response = Http::timeout($this->timeout())->post("{$endpoint}/translate", [
-            'q' => $text,
-            'source' => $sourceLang,
-            'target' => $targetLang,
-            'format' => 'text',
-            'api_key' => (string) $this->config('libretranslate_key', ''),
-        ]);
+            $payload = [
+                'q' => $text,
+                'source' => $sourceLang,
+                'target' => $targetLang,
+                'format' => 'text',
+            ];
 
-        if ($response->successful()) {
+            // Self-hosted instances usually run without a key; only send one
+            // when it is actually configured.
+            if ($key = (string) $this->config('libretranslate_key', '')) {
+                $payload['api_key'] = $key;
+            }
+
+            $response = $this->http()->post("{$endpoint}/translate", $payload);
+
+            if ($error = $this->httpError($response, 'LibreTranslate')) {
+                return $error;
+            }
+
             $data = $response->json();
 
-            if (! empty($data['translatedText'])) {
-                return TranslationResult::success(
-                    translated: $data['translatedText'],
-                    source: $this->key(),
-                    confidence: 0.85,
-                    processingTime: $this->elapsed($startTime),
-                );
+            if (! is_array($data) || ! isset($data['translatedText']) || ! is_string($data['translatedText'])) {
+                return TranslationResult::failure('LibreTranslate returned a malformed response');
             }
-        }
 
-        return TranslationResult::failure('LibreTranslate API failed');
+            if (trim($data['translatedText']) === '') {
+                return TranslationResult::miss('LibreTranslate returned an empty translation');
+            }
+
+            return TranslationResult::success(
+                translated: $data['translatedText'],
+                source: $this->key(),
+                confidence: 0.85,
+                processingTime: $this->elapsed($startTime),
+            );
+        });
     }
 }

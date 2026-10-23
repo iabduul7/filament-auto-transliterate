@@ -3,7 +3,6 @@
 namespace Iabduul7\FilamentAutoTransliterate\Providers;
 
 use Iabduul7\FilamentAutoTransliterate\Data\TranslationResult;
-use Illuminate\Support\Facades\Http;
 
 /**
  * Microsoft Translator — meaning-based translation (free tier ~2M chars/month).
@@ -22,33 +21,55 @@ class MicrosoftProvider extends AbstractProvider
 
     public function translate(string $text, string $sourceLang, string $targetLang): TranslationResult
     {
-        $startTime = microtime(true);
+        return $this->guard(function () use ($text, $sourceLang, $targetLang): TranslationResult {
+            $startTime = microtime(true);
 
-        $endpoint = rtrim((string) $this->config('microsoft_endpoint'), '/');
-        $key = (string) $this->config('microsoft_key');
+            $endpoint = rtrim((string) $this->config('microsoft_endpoint'), '/');
 
-        $response = Http::timeout($this->timeout())
-            ->withHeaders([
-                'Ocp-Apim-Subscription-Key' => $key,
+            $headers = [
+                'Ocp-Apim-Subscription-Key' => (string) $this->config('microsoft_key'),
                 'Content-Type' => 'application/json',
-            ])
-            ->post("{$endpoint}/translate?api-version=3.0&from={$sourceLang}&to={$targetLang}", [
-                ['text' => $text],
+            ];
+
+            // Regional / multi-service Azure resources require the region
+            // header; the global endpoint does not. Sent only when configured.
+            if ($region = (string) $this->config('microsoft_region', '')) {
+                $headers['Ocp-Apim-Subscription-Region'] = $region;
+            }
+
+            $query = http_build_query([
+                'api-version' => '3.0',
+                'from' => $sourceLang,
+                'to' => $targetLang,
             ]);
 
-        if ($response->successful()) {
-            $data = $response->json();
+            $response = $this->http()
+                ->withHeaders($headers)
+                ->post("{$endpoint}/translate?{$query}", [
+                    ['text' => $text],
+                ]);
 
-            if (! empty($data[0]['translations'][0]['text'])) {
-                return TranslationResult::success(
-                    translated: $data[0]['translations'][0]['text'],
-                    source: $this->key(),
-                    confidence: (float) ($data[0]['translations'][0]['confidence'] ?? 0.9),
-                    processingTime: $this->elapsed($startTime),
-                );
+            if ($error = $this->httpError($response, 'Microsoft Translator')) {
+                return $error;
             }
-        }
 
-        return TranslationResult::failure('Microsoft Translator API failed');
+            $data = $response->json();
+            $translation = is_array($data) ? ($data[0]['translations'][0] ?? null) : null;
+
+            if (! is_array($translation) || ! isset($translation['text']) || ! is_string($translation['text'])) {
+                return TranslationResult::failure('Microsoft Translator returned a malformed response');
+            }
+
+            if (trim($translation['text']) === '') {
+                return TranslationResult::miss('Microsoft Translator returned an empty translation');
+            }
+
+            return TranslationResult::success(
+                translated: $translation['text'],
+                source: $this->key(),
+                confidence: (float) ($translation['confidence'] ?? 0.9),
+                processingTime: $this->elapsed($startTime),
+            );
+        });
     }
 }

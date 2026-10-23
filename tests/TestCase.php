@@ -14,6 +14,7 @@ use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
 use Iabduul7\FilamentAutoTransliterate\FilamentAutoTransliterateServiceProvider;
+use Illuminate\Routing\RouteCollection;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
@@ -54,5 +55,21 @@ class TestCase extends Orchestra
         // The cache table ships as a publishable .stub, so load it directly.
         $migration = include __DIR__.'/../database/migrations/create_translation_cache_table.php.stub';
         $migration->up();
+    }
+
+    /**
+     * Re-run routes/web.php after changing route-related config (guard,
+     * middleware, throttle). The routes file is evaluated once at boot, so these
+     * options only take effect on (re)registration.
+     */
+    protected function reloadPackageRoutes(): void
+    {
+        $router = $this->app['router'];
+        $router->setRoutes(new RouteCollection);
+
+        require __DIR__.'/../routes/web.php';
+
+        $router->getRoutes()->refreshNameLookups();
+        $router->getRoutes()->refreshActionLookups();
     }
 }

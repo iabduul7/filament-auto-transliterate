@@ -8,9 +8,18 @@
     "transliteration",
     "translation",
     "inline",
-    "input"
+    "input",
+    "filament-plugin",
+    "roman-urdu",
+    "rtl",
+    "input-tools"
   ],
   "homepage": "https://github.com/iabduul7/filament-auto-transliterate",
+  "support": {
+    "issues": "https://github.com/iabduul7/filament-auto-transliterate/issues",
+    "source": "https://github.com/iabduul7/filament-auto-transliterate",
+    "security": "https://github.com/iabduul7/filament-auto-transliterate/security/policy"
+  },
   "license": "MIT",
   "authors": [
     {
@@ -46,6 +55,8 @@
   "scripts": {
     "test": "vendor/bin/pest",
     "test-coverage": "vendor/bin/pest --coverage",
+    "analyse": "vendor/bin/phpstan analyse --no-progress",
+    "lint": "vendor/bin/pint --test",
     "format": "vendor/bin/pint"
   },
   "config": {

@@ -2,8 +2,14 @@ name: fix-php-code-style-issues
 
 on:
   push:
+    branches-ignore:
+      - main
     paths:
       - '**.php'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -16,7 +22,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2

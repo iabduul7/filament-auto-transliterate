@@ -17,6 +17,13 @@ return new class extends Migration
             $table->string('source', 30);
             $table->decimal('confidence', 3, 2)->default(0.80);
             $table->decimal('processing_time', 8, 2)->default(0.00);
+
+            // Who submitted the correction (set only on `user_correction` rows).
+            // A plain indexed id, deliberately not a foreign key: hosts use
+            // different user tables/key types and a correction should outlive
+            // the account that made it.
+            $table->unsignedBigInteger('user_id')->nullable()->index();
+
             $table->timestamps();
 
             // Index on a hash of original_text rather than the TEXT column itself.
@@ -29,7 +36,9 @@ return new class extends Migration
                 $table->string('original_text_hash', 64)->nullable();
             }
 
-            $table->index(['original_text_hash', 'target_language', 'mode'], 'fat_cache_lookup_index');
+            // UNIQUE: one row per (text, target, mode). This is what makes the
+            // cache upsert atomic and race-free (see TranslationCache::cacheTranslation()).
+            $table->unique(['original_text_hash', 'target_language', 'mode'], 'fat_cache_lookup_index');
             $table->index('source');
             $table->index('created_at');
         });
