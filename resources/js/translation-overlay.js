@@ -16,9 +16,15 @@
  * Paste is deliberately NOT converted: pasted text is the user's explicit
  * content, and converting it would be surprising (and expensive).
  *
- * Per-field config (`data-fat-config` JSON): endpoint, learnEndpoint,
- * targetLang, targetPinned, mode, minLength, maxLength and optionally
- * `apiTimeout` (ms, default 8000). Fields without an `endpoint` are skipped.
+ * Per-field config comes from scalar data attributes (never one JSON attribute:
+ * Laravel's attribute bag turns `"` into `\"` and truncates it):
+ *   data-fat-endpoint, data-fat-learn-endpoint, data-fat-target,
+ *   data-fat-pinned (present only when the field pins its target; value = code),
+ *   data-fat-mode, data-fat-min-length, data-fat-max-length,
+ *   data-fat-timeout (ms, default 8000).
+ * Fields without `data-fat-endpoint` are skipped. A legacy `data-fat-config`
+ * JSON attribute is still honoured when `data-fat-endpoint` is absent (manual
+ * tagging).
  *
  * Public surface: window.FilamentAutoTransliterate
  *   .isEnabled, .toggleEnabled(bool), .setTargetLang(code), .getTargetLang()
@@ -256,7 +262,7 @@ class FilamentAutoTransliterate {
   //   1. field pin (`->translatable(target: 'hi')`)
   //   2. the user's header selection (localStorage), if still a valid language
   //   3. the server default (fatConfig.defaultTarget)
-  //   4. the field's own baked-in targetLang (data-fat-config fallback)
+  //   4. the field's own baked-in targetLang (data-fat-target fallback)
   resolveTargetLang(config) {
     if (config.targetPinned) return config.targetLang;
 
@@ -308,18 +314,40 @@ class FilamentAutoTransliterate {
   // Parsed per-field config, or null (with a one-time warning) when the field
   // has no usable config — never fetch `/undefined`.
   getConfig(input) {
+    const d = input.dataset;
     let config = null;
-    try {
-      config = JSON.parse(input.dataset.fatConfig || "null");
-    } catch {
-      config = null;
+
+    if (d.fatEndpoint) {
+      const toInt = (v) => {
+        const n = parseInt(v, 10);
+        return Number.isFinite(n) ? n : undefined;
+      };
+      config = {
+        endpoint: d.fatEndpoint,
+        learnEndpoint: d.fatLearnEndpoint || undefined,
+        targetLang: d.fatTarget || d.fatPinned || undefined,
+        targetPinned: d.fatPinned !== undefined,
+        mode: d.fatMode || undefined,
+        minLength: toInt(d.fatMinLength),
+        maxLength: toInt(d.fatMaxLength),
+        apiTimeout: toInt(d.fatTimeout),
+      };
+      // A pinned field's target is the pinned code.
+      if (d.fatPinned) config.targetLang = d.fatPinned;
+    } else if (d.fatConfig) {
+      // Legacy / manual tagging: a JSON data-fat-config attribute.
+      try {
+        config = JSON.parse(d.fatConfig);
+      } catch {
+        config = null;
+      }
     }
 
     if (!config || typeof config !== "object" || !config.endpoint) {
       if (!this.warnedMissingConfig) {
         this.warnedMissingConfig = true;
         console.warn(
-          "[FilamentAutoTransliterate] A translatable field has a missing or invalid data-fat-config (no endpoint); skipping it.",
+          "[FilamentAutoTransliterate] A translatable field has a missing or invalid config (no data-fat-endpoint); skipping it.",
         );
       }
       return null;

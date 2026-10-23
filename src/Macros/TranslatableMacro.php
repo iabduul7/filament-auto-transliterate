@@ -42,23 +42,23 @@ class TranslatableMacro
                 ? Languages::resolve($target)
                 : config('filament-auto-transliterate.target_language', 'ur');
 
+            // The JS overlay reads these scalar data attributes. Deliberately NOT
+            // one JSON attribute: Laravel's ComponentAttributeBag::__toString()
+            // does not HTML-escape values, it rewrites `"` as `\"`, so a JSON
+            // value is truncated to `{\` by the browser. Scalars can't contain a
+            // quote. The endpoints are the package's named routes (so a host can
+            // re-prefix them) as relative URLs (absolute: false), which keeps
+            // requests same-origin on tenancy / subdomain panels.
             $attributes = [
                 'data-fat-translatable' => 'true',
-                // The JS overlay reads these data attributes. The endpoints are
-                // the package's named routes, so a host can re-prefix them freely.
-                // Relative URLs (absolute: false) keep requests same-origin on
-                // tenancy / subdomain panels instead of pinning APP_URL.
-                'data-fat-config' => json_encode([
-                    'endpoint' => route('filament-auto-transliterate.translate', [], false),
-                    'learnEndpoint' => route('filament-auto-transliterate.learn', [], false),
-                    'targetLang' => $targetLang,
-                    'targetPinned' => $targetPinned,
-                    'mode' => $mode->value,
-                    'minLength' => config('filament-auto-transliterate.min_text_length', 2),
-                    'maxLength' => config('filament-auto-transliterate.max_text_length', 1000),
-                    // Client-side fetch abort, in ms: server timeout plus connect budget.
-                    'apiTimeout' => ((int) config('filament-auto-transliterate.api_timeout', 5) + 3) * 1000,
-                ]),
+                'data-fat-endpoint' => route('filament-auto-transliterate.translate', [], false),
+                'data-fat-learn-endpoint' => route('filament-auto-transliterate.learn', [], false),
+                'data-fat-target' => $targetLang,
+                'data-fat-mode' => $mode->value,
+                'data-fat-min-length' => (string) config('filament-auto-transliterate.min_text_length', 2),
+                'data-fat-max-length' => (string) config('filament-auto-transliterate.max_text_length', 1000),
+                // Client-side fetch abort, in ms: server timeout plus connect budget.
+                'data-fat-timeout' => (string) (((int) config('filament-auto-transliterate.api_timeout', 5) + 3) * 1000),
             ];
 
             if ($targetPinned) {

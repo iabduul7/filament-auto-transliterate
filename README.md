@@ -302,8 +302,15 @@ window.addEventListener('fat:applied', (e) => console.log(e.detail.original, '->
 | Attribute | Value |
 | --------- | ----- |
 | `data-fat-translatable` | `"true"` marks the input. |
-| `data-fat-config` | JSON: `endpoint`, `learnEndpoint` (relative URLs), `targetLang`, `targetPinned`, `mode`, `minLength`, `maxLength`, `apiTimeout` (client request timeout in ms; `api_timeout` + 3s, default 8000). |
+| `data-fat-endpoint` | Relative translate route URL (fields without it are skipped). |
+| `data-fat-learn-endpoint` | Relative learn route URL. |
+| `data-fat-target` | Target language code. |
+| `data-fat-mode` | `transliterate` or `translate`. |
+| `data-fat-min-length` / `data-fat-max-length` | Text length bounds (integers). |
+| `data-fat-timeout` | Client request timeout in ms (`api_timeout` + 3s, default 8000). |
 | `data-fat-pinned` | Language code, present only on fields pinned via `->translatable(target: ...)`. |
+
+There is intentionally no JSON attribute: Laravel's attribute bag does not HTML-escape values (it turns `"` into `\"`), which would truncate it. Inputs tagged by hand with a legacy `data-fat-config` JSON attribute (and no `data-fat-endpoint`) are still read.
 
 Client error handling: 401/403/419 shows "Session expired" and pauses requests for 30s; 429 pauses for 15s; 5xx/network errors pause for 5s; 422 is remembered as a miss.
 

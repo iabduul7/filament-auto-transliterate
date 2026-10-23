@@ -136,7 +136,7 @@ Ordered by value/effort; the first is part of this plan, the rest are candidates
 | `src/Http/Controllers/TranslationController.php` | `learn()` action |
 | `src/Services/TranslationService.php` | `learn()` method |
 | `src/Models/TranslationCache.php` | never-overwrite-correction guard |
-| `src/Macros/TranslatableMacro.php` | `learnEndpoint` in `data-fat-config` |
+| `src/Macros/TranslatableMacro.php` | `data-fat-learn-endpoint` attribute |
 | `resources/js/translation-overlay.js` | snapshot + token-diff detector, learn POST |
 | tests | endpoint validation matrix; correction-wins-over-provider; guard test |
 

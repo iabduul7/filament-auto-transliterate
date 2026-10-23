@@ -12,7 +12,7 @@ Production hardening: provider error handling, endpoint security, an atomic cach
 - **Plugin API:** static `FilamentAutoTransliteratePlugin::authorizeUsing(?Closure)` (Request -> bool, 403 on falsy), `->toggleRenderHook(string)`, `->scriptNonce(Closure|string|null)` (defaults to `Vite::cspNonce()`).
 - **Routes/config:** `route.guard` (builds `auth:<guard>`), `route.throttle` (default `60,1`) via the named rate limiters `filament-auto-transliterate` and `filament-auto-transliterate-learn` (per user, falling back to IP), `allowed_modes`, `ops_endpoints.enabled` / `ops_endpoints.probe_providers`, `learn.max_original_length` (200), `learn.throttle` (`20,1`), `learn.min_script_ratio` (1.0), `microsoft_region` (`MICROSOFT_TRANSLATOR_REGION`), `cache_ttl_days`.
 - **Cache:** `user_id` column (the correcting user is stored on `user_correction` rows), `TranslationCache::prune(days)` and the `filament-auto-transliterate:prune {--days=}` command. New upgrade migration stub `add_user_id_and_unique_index_to_translation_cache_table`.
-- **JS events** on `window`: `fat:ready`, `fat:applied` `{input, original, applied, targetLang, mode}`, `fat:error` `{input, status}`, `fat:toggled` `{enabled}`, `fat:language-changed` `{code}`; plus `refresh()` on `window.FilamentAutoTransliterate` and an `apiTimeout` (ms) field in `data-fat-config`.
+- **JS events** on `window`: `fat:ready`, `fat:applied` `{input, original, applied, targetLang, mode}`, `fat:error` `{input, status}`, `fat:toggled` `{enabled}`, `fat:language-changed` `{code}`; plus `refresh()` on `window.FilamentAutoTransliterate` and a client request timeout (ms) attribute, `data-fat-timeout`.
 - **JS behaviour:** conversion on Space, textarea Enter, Tab and blur (paste stays untouched); input-event fallback for mobile keyboards/IMEs; punctuation-aware tokens; emails, URLs, digits and already-target-script text are skipped.
 - **Accessibility/UI:** keyboard-accessible header switcher (`aria-pressed`, listbox semantics), `role="status"` overlay, higher-contrast colours, `dir="auto"` on converted fields, dark mode via `.dark`.
 - **Project hygiene:** `SECURITY.md`, `CONTRIBUTING.md`, issue/PR templates, Dependabot, `phpstan.neon.dist` (level 5), `pint.json`, `.gitattributes` (LF + `export-ignore` for dev files), committed `package-lock.json`, composer scripts `analyse` and `lint`.
@@ -35,7 +35,7 @@ Production hardening: provider error handling, endpoint security, an atomic cach
 - `fix-php-code-style-issues` workflow no longer runs on `main`.
 
 ### Fixed
-
+- Per-field config was truncated to `{\` in the browser on Filament 5: Laravel's attribute bag rewrites `"` as `\"` instead of HTML-escaping, so the JSON `data-fat-config` attribute never parsed. The macro now emits plain scalar attributes.
 - Provider "no result" outcomes no longer trip the circuit breaker.
 - Concurrent cache writes no longer race (unique index + atomic upsert); the migration upgrade de-duplicates existing rows.
 - Stale spinners left behind by timed-out or aborted requests; toggled-off in-flight requests no longer mutate fields.
@@ -45,6 +45,7 @@ Production hardening: provider error handling, endpoint security, an atomic cach
 
 ### Breaking
 
+- **`data-fat-config` is replaced by scalar attributes:** `data-fat-endpoint`, `data-fat-learn-endpoint`, `data-fat-target`, `data-fat-mode`, `data-fat-min-length`, `data-fat-max-length`, `data-fat-timeout` (plus the existing `data-fat-pinned`). Manually tagged inputs that still carry a `data-fat-config` JSON attribute (and no `data-fat-endpoint`) keep working via a legacy fallback.
 - **`/provider-status` response shape:** each provider is now `{configured, circuit_open}` (plus `ok` / `error: "unavailable"` when probing) with a top-level `probed`. The old shape is gone.
 - **`/stats` and `/provider-status` are disabled by default** (404); enable with `ops_endpoints.enabled`.
 - **`route.middleware` now defaults to `null`** (the stack is built from `route.guard`). A published config with an explicit array is still honoured verbatim, but `guard` is ignored in that case; throttling now comes from `route.throttle`.

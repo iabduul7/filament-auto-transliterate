@@ -111,9 +111,9 @@ TextInput::make('name_hi')->translatable(target: 'hi');        // pinned to Hind
 TextInput::make('summary')->translatable(mode: 'translate', target: 'ar');
 ```
 
-`data-fat-config` gains `targetPinned: bool`. Resolution order in JS:
+A pinned field carries `data-fat-pinned="<code>"` (alongside the scalar `data-fat-target`). Resolution order in JS:
 
-1. field pin (`targetPinned === true` → use the field's `targetLang`), else
+1. field pin (`data-fat-pinned` present → use the field's pinned code), else
 2. the user's header selection (`localStorage.fat_target_lang`), else
 3. the server default (`config('...target_language')`).
 
