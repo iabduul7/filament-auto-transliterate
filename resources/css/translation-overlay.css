@@ -1,19 +1,21 @@
+/* Overlay colours are chosen for >= 4.5:1 contrast against the white text:
+   success #047857 (5.5:1) / #065f46, error #b91c1c (6.5:1) / #991b1b. */
 .fat-overlay {
     position: fixed;
     display: none;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
     border: 1px solid rgb(6 78 59);
     border-radius: 0.5rem;
     padding: 0.75rem;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     z-index: 9999;
     min-width: 200px;
-    max-width: 500px;
+    max-width: min(500px, calc(100vw - 16px));
     color: #fff;
 }
 
 .fat-overlay.is-error {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
     border-color: rgb(127 29 29);
 }
 
@@ -40,9 +42,10 @@
 }
 
 /* In-field loading spinner. Scoped: only the wrapper that currently hosts a
-   spinner becomes a positioning context, so Filament's input layout is never
-   altered otherwise. */
-.fi-input-wrp.fat-loading-host {
+   spinner (or a pinned badge) becomes a positioning context, so Filament's
+   input layout is never altered otherwise. */
+.fi-input-wrp.fat-loading-host,
+.fi-input-wrp.fat-badge-host {
     position: relative;
 }
 
@@ -56,13 +59,22 @@
     justify-content: center;
     pointer-events: none;
     z-index: 10;
-    /* Muted, theme-agnostic tint that reads on a white or dark field. */
+    /* Muted tint on a white field; the spinner SVG draws with currentColor. */
     color: rgb(107 114 128);
+}
+
+.dark .fat-field-spinner {
+    color: rgb(156 163 175);
 }
 
 .fat-field-spinner svg {
     height: 1rem;
     width: 1rem;
+}
+
+/* Keep the spinner clear of the pinned-language badge when both are present. */
+.fi-input-wrp.fat-badge-host .fat-field-spinner {
+    inset-inline-end: 2.75rem;
 }
 
 @keyframes fat-spin {
@@ -71,23 +83,21 @@
     }
 }
 
-/* Pinned-field badge (doc 03): a tiny suffix badge showing the pinned target
-   language code, driven purely by the `data-fat-pinned="<code>"` attribute the
-   ->translatable(target: ...) macro emits on the input — no JS listeners.
-   `content: attr()` only reads the attribute from the element the pseudo is
-   attached to, so the badge is generated on `[data-fat-pinned]` itself (the
-   `:has()` rule below only reserves layout space on the wrapper); browsers
-   that don't render generated content on form controls simply show no badge —
-   the field still works normally either way. */
-.fi-input-wrp:has([data-fat-pinned]) {
-    position: relative;
+@media (prefers-reduced-motion: reduce) {
+    .fat-spin {
+        animation-duration: 3s;
+    }
 }
 
-[data-fat-pinned]::after {
-    content: attr(data-fat-pinned);
+/* Pinned-field badge (doc 03): a tiny chip showing the pinned target language
+   code. Rendered by the JS overlay into the `.fi-input-wrp` wrapper (a
+   pseudo-element on the <input> itself is dead — inputs are replaced
+   elements); inputs outside a wrapper simply get no badge. */
+.fat-pinned-badge {
     position: absolute;
     inset-inline-end: 0.5rem;
-    top: 0.375rem;
+    top: 50%;
+    transform: translateY(-50%);
     z-index: 5;
     padding: 0 0.375rem;
     font-size: 0.625rem;
@@ -96,16 +106,14 @@
     text-transform: uppercase;
     letter-spacing: 0.02em;
     border-radius: 9999px;
-    color: rgb(107 114 128);
+    color: rgb(75 85 99);
     background: rgb(243 244 246);
     pointer-events: none;
 }
 
-@media (prefers-color-scheme: dark) {
-    [data-fat-pinned]::after {
-        color: rgb(209 213 219);
-        background: rgb(55 65 81);
-    }
+.dark .fat-pinned-badge {
+    color: rgb(209 213 219);
+    background: rgb(55 65 81);
 }
 
 /* Header language switcher — fallback positioning/visuals beyond what the
@@ -119,8 +127,11 @@
     background: rgb(243 244 246);
 }
 
-@media (prefers-color-scheme: dark) {
-    .fat-lang-option[aria-selected="true"] {
-        background: rgba(255, 255, 255, 0.05);
-    }
+.fat-lang-option:focus-visible {
+    outline: 2px solid rgb(var(--primary-500, 59 130 246));
+    outline-offset: -2px;
+}
+
+.dark .fat-lang-option[aria-selected="true"] {
+    background: rgba(255, 255, 255, 0.05);
 }

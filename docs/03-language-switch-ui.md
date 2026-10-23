@@ -1,5 +1,15 @@
 # 03 — UI for language switching
 
+> **Status (v0.3.0):** implemented. Since v0.2.0: the header switcher is fully
+> keyboard accessible (`aria-pressed` on the toggle, listbox/option semantics,
+> arrow/Home/End/Enter/Space/Escape); the pinned-field badge is now rendered by
+> JS (`.fat-pinned-badge`) rather than Blade; dark mode keys on Filament's `.dark`
+> class; and the toggle location is configurable with `->toggleRenderHook()`.
+> The JS now exposes an event API on `window` (`fat:ready`, `fat:applied`,
+> `fat:error`, `fat:toggled`, `fat:language-changed`) plus `refresh()`; see the
+> README's "JavaScript API".
+
+
 ## Goal
 
 Once multiple target languages exist (doc 01), the user needs to see **which

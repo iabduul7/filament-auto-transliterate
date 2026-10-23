@@ -2,6 +2,7 @@
 
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Section;
 
 /*
 | The package registers `translatable()` as its primary macro on Filament
@@ -95,4 +96,19 @@ it('is a no-op when the package is globally disabled', function () {
     $input = TextInput::make('name')->autoTransliterate();
 
     expect($input->getExtraInputAttributes())->not->toHaveKey('data-fat-translatable');
+});
+
+it('throws a clear LogicException naming the class on a non-input component', function () {
+    expect(fn () => Section::make('General')->translatable())
+        ->toThrow(LogicException::class, Section::class)
+        ->and(fn () => Section::make('General')->autoTransliterate())
+        ->toThrow(LogicException::class, 'input components');
+});
+
+it('emits relative route URLs so tenancy and subdomain panels stay same-origin', function () {
+    $config = json_decode(TextInput::make('name')->translatable()->getExtraInputAttributes()['data-fat-config'], true);
+
+    expect($config['endpoint'])->toBe('/filament-auto-transliterate/translate')
+        ->and($config['learnEndpoint'])->toBe('/filament-auto-transliterate/learn')
+        ->and($config['endpoint'])->not->toContain('http');
 });

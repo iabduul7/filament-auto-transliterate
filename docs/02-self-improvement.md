@@ -1,5 +1,17 @@
 # 02 — Self-improvement (learning from corrections)
 
+> **Status (v0.3.0):** implemented, and hardened. `/learn` now enforces
+> `learn.max_original_length` (200), a stricter named limiter (`learn.throttle`,
+> `20,1`), and `learn.min_script_ratio` (1.0: every letter of the correction must
+> be in the target script). Corrections store the correcting `user_id`
+> (numeric ids only). The cache write is an atomic conditional upsert on a UNIQUE
+> `(hash, target, mode)` index, so a provider result can never overwrite a
+> correction, even under concurrency. Retention: `filament-auto-transliterate:prune`
+> / `cache_ttl_days` delete provider rows only; corrections are never pruned.
+> The client expires its correction records. Still open: "Beyond corrections"
+> items 2-4.
+
+
 ## Goal
 
 The package should get better the more it is used — without any paid service. The

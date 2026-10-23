@@ -18,8 +18,15 @@ interface TranslationProvider
     public function isConfigured(): bool;
 
     /**
-     * Attempt the conversion. Implementations must never throw: catch their own
-     * transport errors and return TranslationResult::failure().
+     * Attempt the conversion. Implementations should not throw: catch their own
+     * transport errors and report them correctly:
+     *
+     *  - TranslationResult::miss($reason)    "no result for this text" (word not
+     *    in a dictionary, no candidates, quota-warning text). Never counts
+     *    towards the circuit breaker.
+     *  - TranslationResult::failure($error)  the provider itself failed
+     *    (transport error, timeout, HTTP 4xx/5xx/429, malformed response).
+     *    Counts towards the circuit breaker.
      */
     public function translate(string $text, string $sourceLang, string $targetLang): TranslationResult;
 }

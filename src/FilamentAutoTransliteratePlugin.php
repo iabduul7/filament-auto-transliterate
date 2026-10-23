@@ -2,10 +2,13 @@
 
 namespace Iabduul7\FilamentAutoTransliterate;
 
+use Closure;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 use Filament\View\PanelsRenderHook;
 use Iabduul7\FilamentAutoTransliterate\Support\Languages;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Vite;
 
 class FilamentAutoTransliteratePlugin implements Plugin
 {
@@ -14,6 +17,16 @@ class FilamentAutoTransliteratePlugin implements Plugin
     protected bool $injectCsrfMeta = true;
 
     protected bool $languageSwitcher = true;
+
+    protected string $toggleRenderHook = PanelsRenderHook::GLOBAL_SEARCH_BEFORE;
+
+    protected Closure|string|null $scriptNonce = null;
+
+    /**
+     * Host authorization callback for the HTTP endpoints (static: the routes are
+     * panel-independent). Receives the Request, returns true to allow.
+     */
+    protected static ?Closure $authorizeUsing = null;
 
     public function getId(): string
     {
@@ -66,6 +79,59 @@ class FilamentAutoTransliteratePlugin implements Plugin
         return $this;
     }
 
+    /**
+     * Render hook the on/off toggle (+ language chip) is injected at. Defaults
+     * to PanelsRenderHook::GLOBAL_SEARCH_BEFORE; move it for layouts with a
+     * custom topbar, a sidebar-only or a simple-layout panel.
+     */
+    public function toggleRenderHook(string $hook): static
+    {
+        $this->toggleRenderHook = $hook;
+
+        return $this;
+    }
+
+    /**
+     * CSP nonce for the inline `window.fatConfig` script. By default the nonce
+     * Laravel's Vite integration exposes (Vite::useCspNonce() / cspNonce(), the
+     * same one Filament uses for its own scripts) is applied automatically; use
+     * this to supply a different one. Accepts a string or a closure returning one.
+     */
+    public function scriptNonce(Closure|string|null $nonce): static
+    {
+        $this->scriptNonce = $nonce;
+
+        return $this;
+    }
+
+    /**
+     * Gate every package endpoint behind a host check, e.g.
+     *   FilamentAutoTransliteratePlugin::authorizeUsing(fn (Request $r) => $r->user()?->can('use-transliteration'));
+     * A falsy result yields 403. Pass null to remove the hook.
+     *
+     * @param  (Closure(Request): mixed)|null  $callback
+     */
+    public static function authorizeUsing(?Closure $callback): void
+    {
+        static::$authorizeUsing = $callback;
+    }
+
+    /**
+     * True when no authorize hook is set, or the hook approves the request.
+     */
+    public static function isAuthorized(Request $request): bool
+    {
+        return static::$authorizeUsing === null || (bool) (static::$authorizeUsing)($request);
+    }
+
+    protected function resolveNonce(): ?string
+    {
+        $nonce = $this->scriptNonce instanceof Closure ? ($this->scriptNonce)() : $this->scriptNonce;
+        $nonce ??= Vite::cspNonce();
+
+        return filled($nonce) ? (string) $nonce : null;
+    }
+
     public function register(Panel $panel): void
     {
         if ($this->injectCsrfMeta) {
@@ -80,17 +146,27 @@ class FilamentAutoTransliteratePlugin implements Plugin
         // bundle executes, regardless of load order.
         $panel->renderHook(
             PanelsRenderHook::HEAD_END,
-            fn (): string => '<script>window.fatConfig = '.json_encode([
-                'languages' => Languages::forJs(),
-                'defaultTarget' => config('filament-auto-transliterate.target_language', 'ur'),
-                'learnEnabled' => config('filament-auto-transliterate.learn.enabled', true),
-            ]).';</script>',
+            function (): string {
+                $json = json_encode([
+                    'languages' => Languages::forJs(),
+                    'defaultTarget' => config('filament-auto-transliterate.target_language', 'ur'),
+                    'learnEnabled' => config('filament-auto-transliterate.learn.enabled', true),
+                ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+
+                $nonce = $this->resolveNonce();
+                $nonceAttribute = $nonce !== null ? ' nonce="'.e($nonce).'"' : '';
+
+                return '<script'.$nonceAttribute.'>window.fatConfig = '.$json.';</script>';
+            },
         );
 
         if ($this->showToggle) {
+            /** @var view-string $toggleView */
+            $toggleView = 'filament-auto-transliterate::hooks.toggle';
+
             $panel->renderHook(
-                PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
-                fn (): string => view('filament-auto-transliterate::hooks.toggle', [
+                $this->toggleRenderHook,
+                fn (): string => view($toggleView, [
                     'languageSwitcher' => $this->languageSwitcher,
                 ])->render(),
             );

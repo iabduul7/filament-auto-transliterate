@@ -1,0 +1,104 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+/*
+| Upgrade for installs created before `user_id` and the UNIQUE lookup index
+| existed. Idempotent: a fresh install (whose create migration already has both)
+| runs this as a no-op.
+*/
+return new class extends Migration
+{
+    private const INDEX = 'fat_cache_lookup_index';
+
+    public function up(): void
+    {
+        $tableName = config('filament-auto-transliterate.table_name', 'translation_cache');
+
+        if (! Schema::hasTable($tableName)) {
+            return;
+        }
+
+        if (! Schema::hasColumn($tableName, 'user_id')) {
+            Schema::table($tableName, function (Blueprint $table) {
+                $table->unsignedBigInteger('user_id')->nullable()->index();
+            });
+        }
+
+        $lookup = collect(Schema::getIndexes($tableName))->firstWhere('name', self::INDEX);
+
+        if ($lookup !== null && $lookup['unique']) {
+            return;
+        }
+
+        $this->backfillHashes($tableName);
+        $this->removeDuplicates($tableName);
+
+        Schema::table($tableName, function (Blueprint $table) use ($lookup) {
+            if ($lookup !== null) {
+                $table->dropIndex(self::INDEX);
+            }
+
+            $table->unique(['original_text_hash', 'target_language', 'mode'], self::INDEX);
+        });
+    }
+
+    public function down(): void
+    {
+        // Intentionally left as is: dropping the unique index or user_id would
+        // discard data/guarantees the package now relies on.
+    }
+
+    /**
+     * Legacy rows written before the model populated `original_text_hash` carry a
+     * NULL hash. Fill them so they take part in de-duplication and are protected
+     * by (and findable through) the unique lookup index. MySQL's generated column
+     * is always populated, so nothing to do there.
+     */
+    private function backfillHashes(string $tableName): void
+    {
+        if (DB::connection()->getDriverName() === 'mysql' || ! Schema::hasColumn($tableName, 'original_text_hash')) {
+            return;
+        }
+
+        DB::table($tableName)
+            ->select('id', 'original_text')
+            ->whereNull('original_text_hash')
+            ->chunkById(500, function ($rows) use ($tableName) {
+                foreach ($rows as $row) {
+                    DB::table($tableName)
+                        ->where('id', $row->id)
+                        ->update(['original_text_hash' => hash('sha256', (string) $row->original_text)]);
+                }
+            });
+    }
+
+    /**
+     * Collapse rows that share (hash, target, mode) so the unique index can be
+     * built: keep a user correction if there is one, otherwise the newest row.
+     */
+    private function removeDuplicates(string $tableName): void
+    {
+        $groups = DB::table($tableName)
+            ->select('original_text_hash', 'target_language', 'mode')
+            ->whereNotNull('original_text_hash')
+            ->groupBy('original_text_hash', 'target_language', 'mode')
+            ->havingRaw('count(*) > 1')
+            ->get();
+
+        foreach ($groups as $group) {
+            $rows = DB::table($tableName)
+                ->where('original_text_hash', $group->original_text_hash)
+                ->where('target_language', $group->target_language)
+                ->where('mode', $group->mode)
+                ->orderByRaw("case when source = 'user_correction' then 1 else 0 end desc")
+                ->orderByDesc('id')
+                ->pluck('id');
+
+            DB::table($tableName)->whereIn('id', $rows->slice(1)->all())->delete();
+        }
+    }
+};
