@@ -1,6 +1,7 @@
 <?php
 
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Iabduul7\FilamentAutoTransliterate\Macros\TranslatableMacro;
 
 /*
@@ -87,9 +88,9 @@ it('is a no-op when the package is globally disabled', function () {
 });
 
 it('throws a clear LogicException naming the class on a non-input component', function () {
-    $sectionClass = class_exists(\Filament\Schemas\Components\Section::class)
-        ? \Filament\Schemas\Components\Section::class
-        : \Filament\Forms\Components\Section::class;
+    $sectionClass = class_exists(Section::class)
+        ? Section::class
+        : Filament\Forms\Components\Section::class;
 
     expect(fn () => $sectionClass::make('General')->translatable())
         ->toThrow(LogicException::class, $sectionClass)
