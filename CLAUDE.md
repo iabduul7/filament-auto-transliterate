@@ -2,7 +2,7 @@
 
 Open-source Filament plugin: inline, as-you-type transliteration/translation for form inputs. Type Roman Urdu, get Urdu script on the spacebar, without leaving the field. Extracted from the `malik-and-brothers-goods` app. It is a **keyboard-style input helper**, not a content-translation workflow.
 
-- **Identity:** package `iabduul7/filament-auto-transliterate`, namespace `Iabduul7\FilamentAutoTransliterate`. Published on Packagist (latest tagged: v0.2.0; v0.3.0 is the current `dev` release). Supports `filament/filament: ^4.0 || ^5.0`, PHP 8.2+, Laravel 11/12 (CI-tested).
+- **Identity:** package `iabduul7/filament-auto-transliterate`, namespace `Iabduul7\FilamentAutoTransliterate`. Published on Packagist (latest tagged: v0.2.0; v0.3.0 is the current `dev` release). Supports `filament/filament: ^3.2 || ^4.0 || ^5.0`, PHP 8.2+, Laravel 11/12 (CI-tested).
 - **GitHub:** `https://github.com/iabduul7/filament-auto-transliterate`.
 
 ## Repo / release workflow
@@ -82,7 +82,7 @@ Open-source Filament plugin: inline, as-you-type transliteration/translation for
 - The DOM/spinner/switcher JS behaviour is NOT covered by the PHP suite — verify spinner/toggle/dropdown/morph/IME behaviour in a real browser.
 
 ## CI / branch protection
-- `.github/workflows/run-tests.yml` runs on PRs to `main` and `dev` (and pushes to `main`) with these jobs: the `test` matrix (PHP 8.2/8.3/8.4 × Laravel 11/12 × Filament 4/5, prefer-stable = **12 jobs** named `P8.x - L1y.* - F4.*|F5.* - prefer-stable`; plus one experimental, non-blocking `prefer-lowest` run), "Pint (code style)" (also `composer validate --strict`), "PHPStan (static analysis)", and "Dist (assets up to date)".
+- `.github/workflows/run-tests.yml` runs on PRs to `main` and `dev` (and pushes to `main`) with these jobs: the `test` matrix (PHP 8.2/8.3/8.4 × Laravel 11/12 × Filament 3/4/5, prefer-stable = **18 jobs** named `P8.x - L1y.* - F3.*|F4.*|F5.* - prefer-stable`; plus one experimental, non-blocking `prefer-lowest` run), "Pint (code style)" (also `composer validate --strict`), "PHPStan (static analysis)", and "Dist (assets up to date)".
 - **`main` is branch-protected**: the 12 matrix jobs + "Pint (code style)" + "PHPStan (static analysis)" + "Dist (assets up to date)" must be the REQUIRED status checks, `strict` (branch must be up to date), force-push/deletion disabled. Admins are NOT enforced; no required PR review. So the merge gate is CI-green only. (The branch-protection settings live on GitHub, not in the repo — verify they match after changing CI.)
 - The matrix job names ARE the required-check contexts — if you change the matrix (PHP/Laravel/Filament versions), update the branch-protection required checks to match, or `main` merges will hang waiting on a check that never reports.
 - The separate `fix-php-code-style-issues.yml` runs on `push` with `**.php` paths to every branch **except `main`** and auto-commits Pint fixes — it is NOT a PR gate (that's why a dedicated `pint --test` job exists for protection).

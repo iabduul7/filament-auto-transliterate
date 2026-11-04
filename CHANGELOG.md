@@ -2,11 +2,13 @@
 
 All notable changes to `filament-auto-transliterate` will be documented in this file.
 
-## v0.3.0 - 2026-10-24
+## v0.3.0 - 2026-11-05
 
-Production hardening: provider error handling, endpoint security, an atomic cache, a much sturdier JS overlay, and CI/hygiene. **Contains breaking changes, see below and "Upgrading to 0.3" in the README.**
+Production hardening: provider error handling, endpoint security, an atomic cache, a much sturdier JS overlay, Filament 3.2+ back-compatibility, and CI/hygiene. **Contains breaking changes, see below and "Upgrading to 0.3" in the README.**
 
 ### Added
+
+- **Filament 3.2+ back-compatibility:** `composer.json` now allows `filament/filament: ^3.2 || ^4.0 || ^5.0`, and `TranslatableMacro` registers on whichever base component `Field` extends (`Filament\Schemas\Components\Component` on v4/v5, `Filament\Forms\Components\Component` on v3).
 
 - **Miss vs error:** provider results are now either a *miss* (worked, no answer) or an *error* (`TranslationResult::miss()` / `::failure()`, `isMiss()` / `isError()`). Only errors count towards the circuit breaker; misses log at debug.
 - **Plugin API:** static `FilamentAutoTransliteratePlugin::authorizeUsing(?Closure)` (Request -> bool, 403 on falsy), `->toggleRenderHook(string)`, `->scriptNonce(Closure|string|null)` (defaults to `Vite::cspNonce()`).
@@ -16,7 +18,7 @@ Production hardening: provider error handling, endpoint security, an atomic cach
 - **JS behaviour:** conversion on Space, textarea Enter, Tab and blur (paste stays untouched); input-event fallback for mobile keyboards/IMEs; punctuation-aware tokens; emails, URLs, digits and already-target-script text are skipped.
 - **Accessibility/UI:** keyboard-accessible header switcher (`aria-pressed`, listbox semantics), `role="status"` overlay, higher-contrast colours, `dir="auto"` on converted fields, dark mode via `.dark`.
 - **Project hygiene:** `SECURITY.md`, `CONTRIBUTING.md`, issue/PR templates, Dependabot, `phpstan.neon.dist` (level 5), `pint.json`, `.gitattributes` (LF + `export-ignore` for dev files), committed `package-lock.json`, composer scripts `analyse` and `lint`.
-- **CI:** matrix now PHP 8.2-8.4 x Laravel 11/12 x Filament 4/5 (12 jobs), plus "Pint (code style)" (also `composer validate --strict`), "PHPStan (static analysis)" and "Dist (assets up to date)"; runs on PRs to `dev` and `main`.
+- **CI:** matrix now PHP 8.2-8.4 x Laravel 11/12 x Filament 3/4/5 (18 jobs), plus "Pint (code style)" (also `composer validate --strict`), "PHPStan (static analysis)" and "Dist (assets up to date)"; runs on PRs to `dev` and `main`.
 
 ### Changed
 

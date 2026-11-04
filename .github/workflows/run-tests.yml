@@ -19,7 +19,7 @@ jobs:
       matrix:
         php: ['8.2', '8.3', '8.4']
         laravel: ['11.*', '12.*']
-        filament: ['4.*', '5.*']
+        filament: ['3.*', '4.*', '5.*']
         stability: [prefer-stable]
         include:
           # Lowest-dependency sanity check; informational only.
@@ -28,7 +28,7 @@ jobs:
             filament: '4.*'
             stability: prefer-lowest
             experimental: true
-        # Filament 4 and 5 both support PHP ^8.2 and Laravel ^11.28|^12|^13,
+        # Filament 3.3+, 4, and 5 all support PHP ^8.2 and Laravel ^11|^12,
         # so no combination needs to be excluded.
 
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - F${{ matrix.filament }} - ${{ matrix.stability }}

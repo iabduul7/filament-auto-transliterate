@@ -22,7 +22,7 @@ class TestCase extends Orchestra
 {
     protected function getPackageProviders($app): array
     {
-        return [
+        $providers = [
             BladeIconsServiceProvider::class,
             BladeHeroiconsServiceProvider::class,
             LivewireServiceProvider::class,
@@ -31,12 +31,17 @@ class TestCase extends Orchestra
             FormsServiceProvider::class,
             InfolistsServiceProvider::class,
             NotificationsServiceProvider::class,
-            SchemasServiceProvider::class,
             TablesServiceProvider::class,
             WidgetsServiceProvider::class,
             FilamentServiceProvider::class,
             FilamentAutoTransliterateServiceProvider::class,
         ];
+
+        if (class_exists(SchemasServiceProvider::class)) {
+            array_splice($providers, 8, 0, [SchemasServiceProvider::class]);
+        }
+
+        return $providers;
     }
 
     protected function defineEnvironment($app): void

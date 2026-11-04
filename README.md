@@ -1,4 +1,9 @@
-# Filament Auto Translate
+# Filament Auto Transliterate
+
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/iabduul7/filament-auto-transliterate.svg?style=flat-square)](https://packagist.org/packages/iabduul7/filament-auto-transliterate)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/iabduul7/filament-auto-transliterate/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/iabduul7/filament-auto-transliterate/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/iabduul7/filament-auto-transliterate.svg?style=flat-square)](https://packagist.org/packages/iabduul7/filament-auto-transliterate)
+[![License](https://img.shields.io/packagist/l/iabduul7/filament-auto-transliterate.svg?style=flat-square)](LICENSE.md)
 
 Inline, as-you-type transliteration and translation for [Filament](https://filamentphp.com) form inputs.
 
@@ -30,7 +35,7 @@ Transliterate mode **never silently falls through** to meaning-based translation
 | ---------- | -------------------------------- |
 | PHP        | 8.2+ (CI: 8.2, 8.3, 8.4)         |
 | Laravel    | 11.x, 12.x (CI-tested)           |
-| Filament   | 4.x or 5.x (both CI-tested)      |
+| Filament   | 3.2+, 4.x, or 5.x (CI-tested)    |
 
 ## Installation
 

@@ -1,8 +1,7 @@
 <?php
 
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Component;
-use Filament\Schemas\Components\Section;
+use Iabduul7\FilamentAutoTransliterate\Macros\TranslatableMacro;
 
 /*
 | The package registers `translatable()` as its primary macro on Filament
@@ -11,8 +10,10 @@ use Filament\Schemas\Components\Section;
 */
 
 it('registers both the translatable and autoTransliterate macros', function () {
-    expect(Component::hasMacro('translatable'))->toBeTrue()
-        ->and(Component::hasMacro('autoTransliterate'))->toBeTrue();
+    $componentClass = TranslatableMacro::targetClass();
+
+    expect($componentClass::hasMacro('translatable'))->toBeTrue()
+        ->and($componentClass::hasMacro('autoTransliterate'))->toBeTrue();
 });
 
 it('tags a field via the translatable macro', function () {
@@ -86,9 +87,13 @@ it('is a no-op when the package is globally disabled', function () {
 });
 
 it('throws a clear LogicException naming the class on a non-input component', function () {
-    expect(fn () => Section::make('General')->translatable())
-        ->toThrow(LogicException::class, Section::class)
-        ->and(fn () => Section::make('General')->autoTransliterate())
+    $sectionClass = class_exists(\Filament\Schemas\Components\Section::class)
+        ? \Filament\Schemas\Components\Section::class
+        : \Filament\Forms\Components\Section::class;
+
+    expect(fn () => $sectionClass::make('General')->translatable())
+        ->toThrow(LogicException::class, $sectionClass)
+        ->and(fn () => $sectionClass::make('General')->autoTransliterate())
         ->toThrow(LogicException::class, 'input components');
 });
 

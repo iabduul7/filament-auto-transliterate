@@ -3,17 +3,33 @@
 namespace Iabduul7\FilamentAutoTransliterate\Macros;
 
 use Filament\Forms\Components\Concerns\HasExtraInputAttributes;
-use Filament\Schemas\Components\Component;
+use Filament\Forms\Components\Field;
 use Iabduul7\FilamentAutoTransliterate\Enums\TranslationMode;
 use Iabduul7\FilamentAutoTransliterate\Support\Languages;
 use LogicException;
 
 class TranslatableMacro
 {
+    /**
+     * Base component class the macros are registered on: Filament 4/5's unified
+     * Schema component (Filament\Schemas\Components\Component) or Filament 3's
+     * Forms component (Filament\Forms\Components\Component) — whichever Field
+     * extends in the installed Filament major.
+     *
+     * @return class-string
+     */
+    public static function targetClass(): string
+    {
+        /** @var class-string $parent */
+        $parent = get_parent_class(Field::class) ?: Field::class;
+
+        return $parent;
+    }
+
     public static function register(): void
     {
         $macro = function (bool $enabled = true, TranslationMode|string|null $mode = null, ?string $target = null) {
-            /** @var Component|HasExtraInputAttributes $this */
+            /** @var Field|HasExtraInputAttributes $this */
 
             // Only input-style components can carry the data attributes the JS
             // overlay keys on. Fail loudly rather than with an opaque
@@ -68,14 +84,16 @@ class TranslatableMacro
             return $this->extraInputAttributes($attributes, merge: true);
         };
 
+        $componentClass = static::targetClass();
+
         // Primary macro. Hosts opt fields in with ->translatable(). Filament has
         // no built-in `translatable` macro, so this is safe in a standard panel;
         // a host that already defines its own can use the ->autoTransliterate()
         // alias below instead.
-        Component::macro('translatable', $macro);
+        $componentClass::macro('translatable', $macro);
 
         // Descriptive alias, also useful when a host app defines its own
         // `translatable` macro and wants an unambiguous name.
-        Component::macro('autoTransliterate', $macro);
+        $componentClass::macro('autoTransliterate', $macro);
     }
 }
