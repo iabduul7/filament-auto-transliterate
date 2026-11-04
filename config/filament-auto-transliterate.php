@@ -111,8 +111,41 @@ return [
     // external translation APIs and must not be public.
     'route' => [
         'prefix' => env('FILAMENT_AUTO_TRANSLITERATE_PREFIX', 'filament-auto-transliterate'),
-        'middleware' => ['web', 'auth'],
+
+        // Auth guard the default middleware authenticates against. Null = the
+        // app's default guard. Set this to your Filament panel's guard (e.g.
+        // 'admin') when it differs from the default one — the default stack then
+        // becomes ['web', 'auth:<guard>'].
+        'guard' => env('FILAMENT_AUTO_TRANSLITERATE_GUARD'),
+
+        // Null (the default) builds ['web', 'auth' / 'auth:<guard>'] when the
+        // routes are registered. Set an explicit array to take full control; the
+        // `guard` option is then ignored.
+        'middleware' => null,
+
+        // Per-user (falls back to per-IP) rate limit as "max,minutes", enforced
+        // by the named limiter `filament-auto-transliterate`. Empty = no limit.
         'throttle' => env('FILAMENT_AUTO_TRANSLITERATE_THROTTLE', '60,1'),
+    ],
+
+    /*
+    | Modes the HTTP endpoints accept. Restrict this (e.g. ['transliterate']) to
+    | stop users burning paid translation-provider quota via `mode=translate`.
+    | A request for a mode not listed here is rejected with a 422.
+    */
+    'allowed_modes' => ['transliterate', 'translate'],
+
+    /*
+    | Operational endpoints (/stats, /provider-status). Disabled by default
+    | (404): they expose cache and provider internals. When enabled they are
+    | still behind the route middleware and FilamentAutoTransliteratePlugin::
+    | authorizeUsing(). `probe_providers` lets /provider-status make a live test
+    | call to every provider — this can hit paid APIs, so it is off by default
+    | (the endpoint then reports only `configured` + circuit-breaker state).
+    */
+    'ops_endpoints' => [
+        'enabled' => env('FILAMENT_AUTO_TRANSLITERATE_OPS_ENABLED', false),
+        'probe_providers' => env('FILAMENT_AUTO_TRANSLITERATE_OPS_PROBE', false),
     ],
 
     'api_timeout' => env('FILAMENT_AUTO_TRANSLITERATE_TIMEOUT', 5),
@@ -122,6 +155,10 @@ return [
     // before running the migration.
     'cache_enabled' => true,
     'table_name' => 'translation_cache',
+
+    // Age (days) after which `filament-auto-transliterate:prune` removes cached
+    // provider results (user corrections are never pruned). Null = keep forever.
+    'cache_ttl_days' => env('FILAMENT_AUTO_TRANSLITERATE_CACHE_TTL_DAYS'),
 
     /*
     | Map of provider key -> class. Add your own here (must implement the
@@ -155,6 +192,9 @@ return [
     'libretranslate_key' => env('LIBRETRANSLATE_API_KEY'),
     'microsoft_key' => env('MICROSOFT_TRANSLATOR_KEY'),
     'microsoft_endpoint' => env('MICROSOFT_TRANSLATOR_ENDPOINT'),
+    // Azure region (e.g. "westeurope"); required for regional / multi-service
+    // Translator resources, sent as Ocp-Apim-Subscription-Region only when set.
+    'microsoft_region' => env('MICROSOFT_TRANSLATOR_REGION'),
     'google_api_key' => env('GOOGLE_TRANSLATE_API_KEY'),
 
     /*
@@ -199,12 +239,29 @@ return [
     */
     'learn' => [
         'enabled' => env('FILAMENT_AUTO_TRANSLITERATE_LEARN_ENABLED', true),
+
+        // Longest `original` (the romanized word) a correction may carry.
+        'max_original_length' => env('FILAMENT_AUTO_TRANSLITERATE_LEARN_MAX_ORIGINAL', 200),
+
+        // Separate, stricter per-user limit for /learn ("max,minutes"; empty = off).
+        'throttle' => env('FILAMENT_AUTO_TRANSLITERATE_LEARN_THROTTLE', '20,1'),
+
+        // Share of the corrected text's letters that must be in the target
+        // script (1.0 = every letter, i.e. no other-script letters allowed;
+        // digits/punctuation are always ignored). Lower it to allow mixed text.
+        'min_script_ratio' => 1.0,
     ],
 
     /*
     | Crude char-by-char transliteration when every provider fails. OFF by
     | default because it produces phonetic nonsense (e.g. "hello" -> garbage).
     | When off, failed conversions leave the user's text unchanged.
+    |
+    | Transliterate mode only (never translate mode), and never cached.
+    | `char_fallback_map` is either keyed by language code
+    | (['ur' => ['a' => 'ا', ...], 'hi' => [...]]) or a flat legacy map, which
+    | applies ONLY when the request target equals `target_language`. A target
+    | without a map gets no fallback (text unchanged), never another script.
     */
     'fallback_transliteration' => env('FILAMENT_AUTO_TRANSLITERATE_FALLBACK', false),
     'char_fallback_map' => [

@@ -1,5 +1,16 @@
 # 04 — Better transliteration on free services
 
+> **Status (v0.3.0):** implemented, with a sharper failure model. Provider
+> results are now a **miss** (worked, no answer) or an **error** (exception,
+> timeout, non-2xx incl. 429, malformed payload); only errors feed the circuit
+> breaker, misses log at debug. All HTTP providers use a 3s connect timeout;
+> empty/echoed translations and MyMemory's quota warning are misses. Fallback
+> char transliteration stays opt-in, is transliterate-mode only, never cached, and
+> its map may be keyed per language. Dictionary providers read per-target
+> `{target}` files (a missing file is a miss). Providers are container singletons.
+> Still open: the candidate-picker UI and the per-mode `api_timeout` split.
+
+
 ## Goal
 
 The default install uses only free/unauthenticated services (Google Input Tools for

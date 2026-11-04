@@ -1,5 +1,17 @@
 # 02 — Self-improvement (learning from corrections)
 
+> **Status (v0.3.0):** implemented, and hardened. `/learn` now enforces
+> `learn.max_original_length` (200), a stricter named limiter (`learn.throttle`,
+> `20,1`), and `learn.min_script_ratio` (1.0: every letter of the correction must
+> be in the target script). Corrections store the correcting `user_id`
+> (numeric ids only). The cache write is an atomic conditional upsert on a UNIQUE
+> `(hash, target, mode)` index, so a provider result can never overwrite a
+> correction, even under concurrency. Retention: `filament-auto-transliterate:prune`
+> / `cache_ttl_days` delete provider rows only; corrections are never pruned.
+> The client expires its correction records. Still open: "Beyond corrections"
+> items 2-4.
+
+
 ## Goal
 
 The package should get better the more it is used — without any paid service. The
@@ -124,7 +136,7 @@ Ordered by value/effort; the first is part of this plan, the rest are candidates
 | `src/Http/Controllers/TranslationController.php` | `learn()` action |
 | `src/Services/TranslationService.php` | `learn()` method |
 | `src/Models/TranslationCache.php` | never-overwrite-correction guard |
-| `src/Macros/TranslatableMacro.php` | `learnEndpoint` in `data-fat-config` |
+| `src/Macros/TranslatableMacro.php` | `data-fat-learn-endpoint` attribute |
 | `resources/js/translation-overlay.js` | snapshot + token-diff detector, learn POST |
 | tests | endpoint validation matrix; correction-wins-over-provider; guard test |
 
