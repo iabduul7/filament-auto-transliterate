@@ -2,9 +2,11 @@
 
 namespace Iabduul7\FilamentAutoTransliterate\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * @property string $original_text
@@ -15,11 +17,12 @@ use Illuminate\Support\Facades\DB;
  * @property float $confidence
  * @property float $processing_time
  * @property string $original_text_hash
+ * @property int|null $user_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class TranslationCache extends Model
 {
-    use HasFactory;
-
     protected $table = 'translation_cache';
 
     protected $fillable = [
@@ -30,6 +33,7 @@ class TranslationCache extends Model
         'source',
         'confidence',
         'processing_time',
+        'user_id',
     ];
 
     protected $casts = [
@@ -93,6 +97,19 @@ class TranslationCache extends Model
      * Permanently cache a conversion result. A null mode resolves to the
      * configured default mode, so a write always targets one specific mode and
      * never overwrites a row of a different mode for the same text/target.
+     *
+     * The write is an atomic conditional upsert keyed on the UNIQUE
+     * (original_text_hash, target_language, mode) index:
+     *
+     *  - a non-correction source issues one `UPDATE ... WHERE source !=
+     *    'user_correction'`, so it can never clobber a native speaker's
+     *    correction — even when racing a concurrent correction write;
+     *  - a correction replaces whatever is there (older correction included);
+     *  - no row matched -> INSERT; if a concurrent writer won the insert (unique
+     *    violation) the loser re-reads (and, for a correction, retries its update).
+     *
+     * Everything goes through the hash, never a scan of the `original_text`
+     * TEXT column. `$userId` is stored only on correction rows.
      */
     public static function cacheTranslation(
         string $originalText,
@@ -102,33 +119,135 @@ class TranslationCache extends Model
         float $confidence = 0.8,
         float $processingTime = 0.0,
         ?string $mode = null,
+        ?int $userId = null,
     ): self {
         $mode = static::resolveMode($mode);
+        $isCorrection = $source === 'user_correction';
 
-        // Find via the hash-indexed lookup rather than matching on the unindexed
-        // `original_text` TEXT column (which would force a full table scan on
-        // every write). Update the existing row or create a new one.
-        $model = static::getTranslation($originalText, $targetLang, $mode) ?? new static([
-            'original_text' => $originalText,
-            'target_language' => $targetLang,
-            'mode' => $mode,
-        ]);
-
-        // A `user_correction` row is ground truth from a native speaker (see
-        // docs/02-self-improvement.md) — a provider or dictionary result must
-        // never clobber it. A newer correction may still replace an older one.
-        if ($model->exists && $model->source === 'user_correction' && $source !== 'user_correction') {
-            return $model;
-        }
-
-        $model->fill([
+        $values = [
             'translated_text' => $translatedText,
             'source' => $source,
             'confidence' => $confidence,
             'processing_time' => $processingTime,
-        ])->save();
+        ];
 
-        return $model;
+        if ($isCorrection && self::hasUserIdColumn()) {
+            $values['user_id'] = $userId;
+        }
+
+        if (self::updateExisting($originalText, $targetLang, $mode, $values, $isCorrection) > 0) {
+            return static::getTranslation($originalText, $targetLang, $mode)
+                ?? self::newInstanceFor($originalText, $targetLang, $mode, $values);
+        }
+
+        try {
+            $insert = fn () => static::create([
+                'original_text' => $originalText,
+                'target_language' => $targetLang,
+                'mode' => $mode,
+            ] + $values);
+
+            // Inside a caller's open transaction a unique violation would abort
+            // it on Postgres ("current transaction is aborted"). A nested
+            // transaction() is a savepoint, so only the failed INSERT is rolled
+            // back; the exception still propagates to the catch below. Outside a
+            // transaction (autocommit) nothing can be aborted, so insert directly.
+            $connection = static::resolveConnection((new self)->getConnectionName());
+
+            return $connection->transactionLevel() > 0
+                ? $connection->transaction($insert)
+                : $insert();
+        } catch (UniqueConstraintViolationException) {
+            // A concurrent writer inserted the row between our UPDATE and INSERT
+            // (or the row exists with identical values, which some drivers
+            // report as 0 affected rows). A correction must still win over a
+            // provider result, so retry its update before re-reading.
+            if ($isCorrection) {
+                self::updateExisting($originalText, $targetLang, $mode, $values, true);
+            }
+
+            return static::getTranslation($originalText, $targetLang, $mode)
+                ?? self::newInstanceFor($originalText, $targetLang, $mode, $values);
+        }
+    }
+
+    /**
+     * Record which user submitted a correction on its `user_correction` row
+     * (hash lookup; never touches provider rows). No-op if the user_id column
+     * has not been migrated yet. Returns the number of rows stamped.
+     */
+    public static function stampCorrectionUser(string $originalText, string $targetLang, ?string $mode, int $userId): int
+    {
+        if (! self::hasUserIdColumn()) {
+            return 0;
+        }
+
+        return static::query()
+            ->where('original_text_hash', hash('sha256', $originalText))
+            ->where('target_language', $targetLang)
+            ->where('mode', static::resolveMode($mode))
+            ->where('original_text', $originalText)
+            ->where('source', 'user_correction')
+            ->update(['user_id' => $userId]);
+    }
+
+    /**
+     * Delete cached provider results created more than $days ago. Rows with
+     * source `user_correction` are never pruned. Uses only the created_at
+     * index (no original_text access). Returns the number of rows removed.
+     */
+    public static function prune(int $days): int
+    {
+        return static::query()
+            ->where('source', '!=', 'user_correction')
+            ->where('created_at', '<', now()->subDays(max(0, $days)))
+            ->delete();
+    }
+
+    /**
+     * One conditional UPDATE against the existing row, if any. Non-corrections
+     * never match a row that is already a user correction.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    private static function updateExisting(string $originalText, string $targetLang, string $mode, array $values, bool $isCorrection): int
+    {
+        $query = static::query()
+            ->where('original_text_hash', hash('sha256', $originalText))
+            ->where('target_language', $targetLang)
+            ->where('mode', $mode)
+            ->where('original_text', $originalText);
+
+        if (! $isCorrection) {
+            $query->where('source', '!=', 'user_correction');
+        }
+
+        return $query->update($values);
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private static function newInstanceFor(string $originalText, string $targetLang, string $mode, array $values): self
+    {
+        return new self([
+            'original_text' => $originalText,
+            'target_language' => $targetLang,
+            'mode' => $mode,
+        ] + $values);
+    }
+
+    /**
+     * Hosts that upgraded without running the user_id migration keep working:
+     * the column is simply not written. Memoised per table for the process.
+     */
+    private static function hasUserIdColumn(): bool
+    {
+        static $known = [];
+
+        $table = (new self)->getTable();
+
+        return $known[$table] ??= Schema::hasColumn($table, 'user_id');
     }
 
     /**
