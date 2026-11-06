@@ -2,6 +2,12 @@
 
 All notable changes to `filament-auto-transliterate` will be documented in this file.
 
+## v0.3.2 - 2026-11-07
+
+### Fixed
+
+- **Header toggle and language switcher styling on Filament v4/v5:** `resources/views/hooks/toggle.blade.php` previously relied on unprefixed Tailwind utility classes (`h-6 w-6`, `h-4 w-4`, `sr-only`, `absolute end-0`, etc.) that Filament v4/v5's precompiled panel stylesheet does not ship unless the host compiles a custom Tailwind theme scanning `vendor/`. All header toggle, status dot, language chip, and dropdown styles are now self-contained `.fat-*` classes in `resources/css/translation-overlay.css` (and prebuilt into `resources/dist/filament-auto-transliterate.css`).
+
 ## v0.3.1 - 2026-11-06
 
 Multi-script-first positioning with Arabic (`ar`) as the default target language.
