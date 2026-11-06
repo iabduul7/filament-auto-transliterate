@@ -1,8 +1,8 @@
 # CLAUDE.md — filament-auto-transliterate
 
-Open-source Filament plugin: inline, as-you-type transliteration/translation for form inputs. Type Roman Urdu, get Urdu script on the spacebar, without leaving the field. Extracted from the `malik-and-brothers-goods` app. It is a **keyboard-style input helper**, not a content-translation workflow.
+Open-source Filament plugin: inline, as-you-type transliteration/translation for form inputs. Type Latin script (Arabizi, Roman Urdu, Hinglish, …), get Arabic, Urdu, Hindi, Persian, and 6+ other scripts on the spacebar, without leaving the field. Extracted from the `malik-and-brothers-goods` app. It is a **keyboard-style input helper**, not a content-translation workflow.
 
-- **Identity:** package `iabduul7/filament-auto-transliterate`, namespace `Iabduul7\FilamentAutoTransliterate`. Published on Packagist (latest tagged: v0.2.0; v0.3.0 is the current `dev` release). Supports `filament/filament: ^3.2 || ^4.0 || ^5.0`, PHP 8.2+, Laravel 11/12 (CI-tested).
+- **Identity:** package `iabduul7/filament-auto-transliterate`, namespace `Iabduul7\FilamentAutoTransliterate`. Published on Packagist (latest tagged: v0.3.0). Supports `filament/filament: ^3.2 || ^4.0 || ^5.0`, PHP 8.2+, Laravel 11/12 (CI-tested).
 - **GitHub:** `https://github.com/iabduul7/filament-auto-transliterate`.
 
 ## Repo / release workflow
@@ -29,7 +29,7 @@ Open-source Filament plugin: inline, as-you-type transliteration/translation for
 - Two strictly-separated modes: `transliterate` (default — same sounds in target script; on a miss leaves text unchanged) and `translate` (by meaning, opt-in). **Transliterate must NEVER silently fall through to translation** — separate provider chains (`config('...providers.transliterate')` vs `...providers.translate')`). Tests assert this; keep them passing.
 
 ## Languages
-- `Support\Languages` is the registry over the `languages` config map (10 targets by default: ur ar fa hi mr pa bn ne ru el — trimmed deliberately; more are one config entry away). Script ranges are defined once as hex range pairs and compiled to both a PHP preg pattern and a JS regex source — never hand-write per-engine regexes elsewhere.
+- `Support\Languages` is the registry over the `languages` config map (10 targets by default: ar ur fa hi mr ne bn pa ru el — `ar` is the default `target_language`; trimmed deliberately; more are one config entry away). Script ranges are defined once as hex range pairs and compiled to both a PHP preg pattern and a JS regex source — never hand-write per-engine regexes elsewhere.
 - Target resolution: `Languages::resolve()` maps unknown codes to the configured default (service-level defence); controllers **validate first** and 422 on an unregistered `target_lang` before resolving. `target_script_pattern` (default `null`) is a global detection override, kept for back-compat.
 - The frontend gets the table via the `window.fatConfig` script injected at `HEAD_END` by the plugin (JSON HEX-escaped; nonce-aware).
 

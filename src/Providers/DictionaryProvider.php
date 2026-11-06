@@ -33,7 +33,7 @@ class DictionaryProvider extends AbstractProvider
             // Whether a given language has a file is decided per request (a
             // missing one is a miss), not here — otherwise availability would
             // hinge on the default target's file only.
-            $default = (string) config('filament-auto-transliterate.target_language', 'ur');
+            $default = (string) config('filament-auto-transliterate.target_language', 'ar');
 
             return is_dir(dirname(str_replace('{target}', $default, $path)));
         }

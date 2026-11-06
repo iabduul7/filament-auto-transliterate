@@ -56,7 +56,7 @@ class TranslatableMacro
             $targetPinned = $target !== null;
             $targetLang = $targetPinned
                 ? Languages::resolve($target)
-                : config('filament-auto-transliterate.target_language', 'ur');
+                : config('filament-auto-transliterate.target_language', 'ar');
 
             // The JS overlay reads these scalar data attributes. Deliberately NOT
             // one JSON attribute: Laravel's ComponentAttributeBag::__toString()

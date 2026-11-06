@@ -2,7 +2,7 @@
         enabled: window.FilamentAutoTransliterate?.isEnabled ?? false,
         switcherAllowed: @js($languageSwitcher ?? true),
         languages: window.fatConfig?.languages ?? {},
-        target: window.FilamentAutoTransliterate?.getTargetLang() ?? window.fatConfig?.defaultTarget ?? 'ur',
+        target: window.FilamentAutoTransliterate?.getTargetLang() ?? window.fatConfig?.defaultTarget ?? 'ar',
         open: false,
         updateState(state) {
             this.enabled = state;

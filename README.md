@@ -7,11 +7,13 @@
 
 Inline, as-you-type transliteration and translation for [Filament](https://filamentphp.com) form inputs.
 
-Type Roman Urdu, press space, and the word is rewritten in Urdu script — without leaving the field, opening a modal, or switching keyboards. Built for data-entry teams who think in Urdu (or Hindi, Arabic, Persian, …) but type on a Latin keyboard. 10 target languages ship out of the box, switchable from the panel header.
+Type Romanized text (Arabizi, Roman Urdu, Hinglish, …), press space, and the word is rewritten in the target script — without leaving the field, opening a modal, or switching OS keyboards. Built for multilingual data-entry teams who think in Arabic, Urdu, Hindi, Persian, or other non-Latin scripts but type on a standard QWERTY keyboard. 10 target languages ship out of the box (`ar` by default), switchable from the panel header.
 
 ```
-receiver  ->  ریسیور        (transliterate: same sounds, Urdu script)
-receiver  ->  وصول کنندہ    (translate: by meaning — opt-in)
+marhaba   ->  مرحبا         (transliterate: Arabic — default)
+receiver  ->  ریسیور        (transliterate: Roman Urdu -> Urdu script)
+namaste   ->  नमस्ते         (transliterate: Hinglish -> Hindi Devanagari)
+receiver  ->  المستلم       (translate: by meaning — opt-in)
 ```
 
 ## Why this exists
@@ -22,10 +24,10 @@ The existing Filament translation plugins are **action-based** (click a button, 
 
 It ships **two distinct modes** and keeps them strictly separate:
 
-| Mode                      | What it does                                                     | On a miss                  |
-| ------------------------- | ---------------------------------------------------------------- | -------------------------- |
-| `transliterate` (default) | Writes the same sounds in the target script (Roman Urdu to Urdu) | Leaves your text unchanged |
-| `translate` (opt-in)      | Converts by meaning (English to Urdu)                            | Leaves your text unchanged |
+| Mode                      | What it does                                                                  | On a miss                  |
+| ------------------------- | ----------------------------------------------------------------------------- | -------------------------- |
+| `transliterate` (default) | Writes the same sounds in the target script (Arabizi/Roman to Arabic/Urdu/…)  | Leaves your text unchanged |
+| `translate` (opt-in)      | Converts by meaning (English to Arabic/Urdu/Hindi/…)                          | Leaves your text unchanged |
 
 Transliterate mode **never silently falls through** to meaning-based translation. That separation is the whole point: a phonetic helper that quietly "translates" a word it didn't recognise is worse than one that leaves it alone.
 
@@ -128,9 +130,9 @@ When a word is converted:
 
 ### Switching languages
 
-When more than one language is configured, a language chip appears next to the header toggle showing the active language's native name (e.g. اردو). Click it to switch (it is keyboard-accessible); the choice persists per browser. Fields pinned with `->translatable(target: ...)` show a badge and always use their pinned language. Hide the chip with `->languageSwitcher(false)` on the plugin.
+When more than one language is configured, a language chip appears next to the header toggle showing the active language's native name (e.g. العربية). Click it to switch (it is keyboard-accessible); the choice persists per browser. Fields pinned with `->translatable(target: ...)` show a badge and always use their pinned language. Hide the chip with `->languageSwitcher(false)` on the plugin.
 
-10 languages ship enabled by default — Urdu, Arabic, Persian, Hindi, Marathi, Punjabi, Bengali, Nepali, Russian, and Greek. Trim or extend the list via the `languages` config key (each entry carries its label, native name, RTL flag, and Unicode script ranges used to detect already-converted text) — any other language Google Input Tools supports (Gujarati, Tamil, Telugu, Kannada, Malayalam, Sinhala, Amharic, Hebrew, …) is one config entry away.
+10 languages ship enabled by default — Arabic, Urdu, Persian, Hindi, Marathi, Nepali, Bengali, Punjabi, Russian, and Greek. Trim or extend the list via the `languages` config key (each entry carries its label, native name, RTL flag, and Unicode script ranges used to detect already-converted text) — any other language Google Input Tools supports (Gujarati, Tamil, Telugu, Kannada, Malayalam, Sinhala, Amharic, Hebrew, …) is one config entry away.
 
 ### It learns from corrections
 
@@ -153,7 +155,7 @@ Every key in `config/filament-auto-transliterate.php`:
 | `enabled` | `true` | `FILAMENT_AUTO_TRANSLITERATE_ENABLED` | Master switch; when false `->translatable()` is a no-op. |
 | `mode` | `transliterate` | `FILAMENT_AUTO_TRANSLITERATE_MODE` | Global default mode (`transliterate` or `translate`). |
 | `source_language` | `en` | `FILAMENT_AUTO_TRANSLITERATE_SOURCE` | Source language passed to providers. |
-| `target_language` | `ur` | `FILAMENT_AUTO_TRANSLITERATE_TARGET` | Default target; users switch via the header chip, fields can pin their own. |
+| `target_language` | `ar` | `FILAMENT_AUTO_TRANSLITERATE_TARGET` | Default target; users switch via the header chip, fields can pin their own. |
 | `target_script_pattern` | `null` | - | Global regex override for "already in target script" detection; `null` uses the per-language pattern. |
 | `languages` | 10 languages | - | Language registry: label, native name, RTL flag, Unicode `script_ranges`, optional `itc` override. |
 | `route.prefix` | `filament-auto-transliterate` | `FILAMENT_AUTO_TRANSLITERATE_PREFIX` | URL prefix for the endpoints. |
@@ -191,7 +193,7 @@ Every key in `config/filament-auto-transliterate.php`:
 | `learn.throttle` | `20,1` | `FILAMENT_AUTO_TRANSLITERATE_LEARN_THROTTLE` | Stricter extra limit for `/learn` (`max,minutes`; empty = off). |
 | `learn.min_script_ratio` | `1.0` | - | Share of the correction's letters that must be in the target script. |
 | `fallback_transliteration` | `false` | `FILAMENT_AUTO_TRANSLITERATE_FALLBACK` | Crude char-by-char fallback when every provider misses. Transliterate mode only, never cached. |
-| `char_fallback_map` | Urdu letter map | - | Flat map (applies to the default `target_language` only) or keyed by language code (`['ur' => [...], 'hi' => [...]]`). A target without a map gets no fallback. |
+| `char_fallback_map` | Keyed `ar` + `ur` letter maps | - | Keyed by language code (`['ar' => [...], 'ur' => [...]]`) or a flat map (applies to the default `target_language` only). A target without a map gets no fallback. |
 | `log_requests` | `false` | `FILAMENT_AUTO_TRANSLITERATE_LOG` | Debug-log activity **including typed text**. Keep off in production. |
 
 ### Providers
