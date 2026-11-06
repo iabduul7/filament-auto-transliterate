@@ -2,6 +2,13 @@
 
 All notable changes to `filament-auto-transliterate` will be documented in this file.
 
+## v0.3.3 - 2026-11-07
+
+### Fixed
+
+- **Pinned-field badge padding & language dropdown height:** added right-side input padding inside `.fi-input-wrp.fat-badge-host` so RTL start-aligned text (`dir="auto"`) never overlaps the `.fat-pinned-badge` chip, and raised `.fat-lang-dropdown` `max-height` to `22rem` so all 10 default languages are visible without scrolling.
+- **Documentation media:** added a 10-second multi-script demo GIF and 2560×1440 dark-mode screenshot in `docs/images/` (`export-ignore`d from Composer tarballs) and embedded the demo GIF in `README.md`.
+
 ## v0.3.2 - 2026-11-07
 
 ### Fixed

@@ -16,6 +16,8 @@ namaste   ->  नमस्ते         (transliterate: Hinglish -> Hindi Devan
 receiver  ->  المستلم       (translate: by meaning — opt-in)
 ```
 
+![Filament Auto Transliterate Demo](https://raw.githubusercontent.com/iabduul7/filament-auto-transliterate/main/docs/images/demo.gif)
+
 ## Why this exists
 
 The existing Filament translation plugins are **action-based** (click a button, fill a per-locale modal) or automate **static labels**. None of them convert **what the user is typing, as they type it**. This package fills that gap: it is a keyboard-style input helper, not a content-translation workflow.
