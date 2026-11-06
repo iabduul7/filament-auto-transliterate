@@ -14,16 +14,16 @@ return [
 
     /*
     | Default conversion mode.
-    |   transliterate -> same sounds in the target script (Roman Urdu -> Urdu).
+    |   transliterate -> same sounds in the target script (Roman -> Arabic/Urdu/Hindi/...).
     |                    On a miss the text is left unchanged; NEVER falls
     |                    through to meaning-based translation.
-    |   translate     -> convert by meaning (English -> Urdu). Opt-in.
+    |   translate     -> convert by meaning (English -> Arabic/Urdu/Hindi/...). Opt-in.
     | Override per field: ->translatable(mode: 'translate').
     */
     'mode' => env('FILAMENT_AUTO_TRANSLITERATE_MODE', 'transliterate'),
 
     'source_language' => env('FILAMENT_AUTO_TRANSLITERATE_SOURCE', 'en'),
-    'target_language' => env('FILAMENT_AUTO_TRANSLITERATE_TARGET', 'ur'),
+    'target_language' => env('FILAMENT_AUTO_TRANSLITERATE_TARGET', 'ar'),
 
     /*
     | If the typed text already matches this pattern it is assumed to be in the
@@ -45,15 +45,15 @@ return [
     | Hosts can trim, extend, or re-label this map freely — it's plain config.
     */
     'languages' => [
-        'ur' => [
-            'label' => 'Urdu',
-            'native' => 'اردو',
-            'rtl' => true,
-            'script_ranges' => [['0600', '06FF'], ['0750', '077F']],
-        ],
         'ar' => [
             'label' => 'Arabic',
             'native' => 'العربية',
+            'rtl' => true,
+            'script_ranges' => [['0600', '06FF'], ['0750', '077F']],
+        ],
+        'ur' => [
+            'label' => 'Urdu',
+            'native' => 'اردو',
             'rtl' => true,
             'script_ranges' => [['0600', '06FF'], ['0750', '077F']],
         ],
@@ -265,32 +265,62 @@ return [
     */
     'fallback_transliteration' => env('FILAMENT_AUTO_TRANSLITERATE_FALLBACK', false),
     'char_fallback_map' => [
-        'a' => 'ا',
-        'b' => 'ب',
-        'c' => 'ک',
-        'd' => 'د',
-        'e' => 'ے',
-        'f' => 'ف',
-        'g' => 'گ',
-        'h' => 'ہ',
-        'i' => 'ی',
-        'j' => 'ج',
-        'k' => 'ک',
-        'l' => 'ل',
-        'm' => 'م',
-        'n' => 'ن',
-        'o' => 'و',
-        'p' => 'پ',
-        'q' => 'ق',
-        'r' => 'ر',
-        's' => 'س',
-        't' => 'ت',
-        'u' => 'و',
-        'v' => 'و',
-        'w' => 'و',
-        'x' => 'کس',
-        'y' => 'ی',
-        'z' => 'ز',
+        'ar' => [
+            'a' => 'ا',
+            'b' => 'ب',
+            'c' => 'ك',
+            'd' => 'د',
+            'e' => 'ي',
+            'f' => 'ف',
+            'g' => 'ج',
+            'h' => 'ه',
+            'i' => 'ي',
+            'j' => 'ج',
+            'k' => 'ك',
+            'l' => 'ل',
+            'm' => 'م',
+            'n' => 'ن',
+            'o' => 'و',
+            'p' => 'ب',
+            'q' => 'ق',
+            'r' => 'ر',
+            's' => 'س',
+            't' => 'ت',
+            'u' => 'و',
+            'v' => 'ف',
+            'w' => 'و',
+            'x' => 'كس',
+            'y' => 'ي',
+            'z' => 'ز',
+        ],
+        'ur' => [
+            'a' => 'ا',
+            'b' => 'ب',
+            'c' => 'ک',
+            'd' => 'د',
+            'e' => 'ے',
+            'f' => 'ف',
+            'g' => 'گ',
+            'h' => 'ہ',
+            'i' => 'ی',
+            'j' => 'ج',
+            'k' => 'ک',
+            'l' => 'ل',
+            'm' => 'م',
+            'n' => 'ن',
+            'o' => 'و',
+            'p' => 'پ',
+            'q' => 'ق',
+            'r' => 'ر',
+            's' => 'س',
+            't' => 'ت',
+            'u' => 'و',
+            'v' => 'و',
+            'w' => 'و',
+            'x' => 'کس',
+            'y' => 'ی',
+            'z' => 'ز',
+        ],
     ],
 
     // When true, logs activity (including typed text) at debug level. Off by

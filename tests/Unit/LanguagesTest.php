@@ -20,6 +20,9 @@ it('resolves a known code to itself', function () {
 });
 
 it('resolves an unknown or null code to the configured default target language', function () {
+    expect(Languages::resolve('bogus'))->toBe('ar')
+        ->and(Languages::resolve(null))->toBe('ar');
+
     config(['filament-auto-transliterate.target_language' => 'ur']);
 
     expect(Languages::resolve('bogus'))->toBe('ur')

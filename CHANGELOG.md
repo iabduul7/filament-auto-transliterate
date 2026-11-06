@@ -2,6 +2,16 @@
 
 All notable changes to `filament-auto-transliterate` will be documented in this file.
 
+## v0.3.1 - 2026-11-06
+
+Multi-script-first positioning with Arabic (`ar`) as the default target language.
+
+### Changed
+
+- **Default target language (`ar`):** `config('filament-auto-transliterate.target_language')` and internal fallbacks now default to `'ar'` (Arabic / العربية) instead of `'ur'`, and `'ar'` is listed first in the `languages` registry (`ar`, `ur`, `fa`, `hi`, `mr`, `ne`, `bn`, `pa`, `ru`, `el`). Set `FILAMENT_AUTO_TRANSLITERATE_TARGET=ur` in `.env` (or `'target_language' => 'ur'` in `config/filament-auto-transliterate.php`) to keep Urdu as the default.
+- **`char_fallback_map`:** now ships keyed for both `'ar'` (Arabic letters) and `'ur'` (Urdu letters).
+- **Package metadata & docs:** updated `composer.json` description/keywords and `README.md` to highlight multi-script support (Arabic, Urdu, Hindi, Persian, and 6+ other scripts).
+
 ## v0.3.0 - 2026-11-05
 
 Production hardening: provider error handling, endpoint security, an atomic cache, a much sturdier JS overlay, Filament 3.2+ back-compatibility, and CI/hygiene. **Contains breaking changes, see below and "Upgrading to 0.3" in the README.**

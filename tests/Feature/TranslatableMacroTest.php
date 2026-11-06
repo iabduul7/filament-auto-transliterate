@@ -22,7 +22,7 @@ it('tags a field via the translatable macro', function () {
 
     expect($attributes['data-fat-translatable'] ?? null)->toBe('true')
         ->and($attributes['data-fat-mode'])->toBe('transliterate')
-        ->and($attributes['data-fat-target'])->toBe('ur')
+        ->and($attributes['data-fat-target'])->toBe('ar')
         ->and($attributes['data-fat-endpoint'])->toContain('filament-auto-transliterate/translate')
         ->and($attributes['data-fat-min-length'])->toBe('2')
         ->and($attributes['data-fat-max-length'])->toBe('1000')
@@ -34,7 +34,7 @@ it('tags a field with the package data attributes', function () {
 
     expect($attributes['data-fat-translatable'] ?? null)->toBe('true')
         ->and($attributes['data-fat-mode'])->toBe('transliterate')
-        ->and($attributes['data-fat-target'])->toBe('ur')
+        ->and($attributes['data-fat-target'])->toBe('ar')
         ->and($attributes['data-fat-endpoint'])->toContain('filament-auto-transliterate/translate');
 });
 

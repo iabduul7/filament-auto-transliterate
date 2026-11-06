@@ -63,8 +63,8 @@ Everything below is supported by Google Input Tools' transliteration itc codes
 
 | Code | Language | Native | Script block(s) | RTL |
 | ---- | -------- | ------ | --------------- | --- |
+| ar | Arabic (default) | العربية | 0600–06FF, 0750–077F | yes |
 | ur | Urdu | اردو | 0600–06FF, 0750–077F | yes |
-| ar | Arabic | العربية | 0600–06FF, 0750–077F | yes |
 | fa | Persian | فارسی | 0600–06FF, 0750–077F | yes |
 | hi | Hindi | हिन्दी | 0900–097F (Devanagari) | no |
 | mr | Marathi | मराठी | 0900–097F | no |

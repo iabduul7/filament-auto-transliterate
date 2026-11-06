@@ -34,7 +34,7 @@ class Languages
      */
     public static function resolve(?string $code): string
     {
-        $default = (string) config('filament-auto-transliterate.target_language', 'ur');
+        $default = (string) config('filament-auto-transliterate.target_language', 'ar');
 
         if ($code !== null && array_key_exists($code, static::all())) {
             return $code;

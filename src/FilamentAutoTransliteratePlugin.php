@@ -149,7 +149,7 @@ class FilamentAutoTransliteratePlugin implements Plugin
             function (): string {
                 $json = json_encode([
                     'languages' => Languages::forJs(),
-                    'defaultTarget' => config('filament-auto-transliterate.target_language', 'ur'),
+                    'defaultTarget' => config('filament-auto-transliterate.target_language', 'ar'),
                     'learnEnabled' => config('filament-auto-transliterate.learn.enabled', true),
                 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 

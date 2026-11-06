@@ -177,7 +177,7 @@ class TranslationService
                 $provider = $this->resolveProvider($key);
                 $configured = $provider !== null && $provider->isConfigured();
                 $result = $configured
-                    ? $this->attempt($provider, 'test', 'en', (string) config('filament-auto-transliterate.target_language', 'ur'))
+                    ? $this->attempt($provider, 'test', 'en', (string) config('filament-auto-transliterate.target_language', 'ar'))
                     : TranslationResult::failure('Not configured');
 
                 return [
@@ -432,7 +432,7 @@ class TranslationService
         }
 
         // Legacy flat map: belongs to the configured default target only.
-        $default = Languages::resolve((string) config('filament-auto-transliterate.target_language', 'ur'));
+        $default = Languages::resolve((string) config('filament-auto-transliterate.target_language', 'ar'));
 
         return $targetLang === $default ? $map : [];
     }
