@@ -21,6 +21,7 @@
 /phpstan.neon.dist  export-ignore
 /pint.json          export-ignore
 /CLAUDE.md          export-ignore
+/HANDOVER.md        export-ignore
 /CONTRIBUTING.md    export-ignore
 /SECURITY.md        export-ignore
 /.gitattributes     export-ignore
