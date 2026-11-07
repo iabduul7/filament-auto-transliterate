@@ -343,7 +343,7 @@ it('opens the breaker after consecutive transport errors', function () {
         'filament-auto-transliterate.provider_failure_cooldown' => 120,
         'filament-auto-transliterate.providers.transliterate' => ['google_input_tools'],
     ]);
-    Http::fake(['inputtools.google.com/*' => Http::failedConnection()]);
+    Http::fake(['inputtools.google.com/*' => fakeFailedConnection()]);
 
     service()->translate('wordone', 'ur', 'transliterate');
     service()->translate('wordtwo', 'ur', 'transliterate');

@@ -61,7 +61,7 @@ it('treats HTTP 500 and 429 as errors', function () {
 });
 
 it('treats a transport failure as an error', function () {
-    Http::fake(['*' => Http::failedConnection()]);
+    Http::fake(['*' => fakeFailedConnection()]);
 
     expect(libre()->translate('help', 'en', 'ur')->isError())->toBeTrue();
 });
