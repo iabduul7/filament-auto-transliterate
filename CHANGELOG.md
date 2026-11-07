@@ -2,6 +2,12 @@
 
 All notable changes to `filament-auto-transliterate` will be documented in this file.
 
+## v0.3.4 - 2026-11-07
+
+### Security
+
+- **CI supply-chain hardening:** pinned all GitHub Actions in `.github/workflows/run-tests.yml` and `.github/workflows/fix-php-code-style-issues.yml` to immutable 40-character commit SHAs and configured `cooldown` windows across `github-actions`, `composer`, and `npm` in `.github/dependabot.yml`.
+
 ## v0.3.3 - 2026-11-07
 
 ### Fixed
