@@ -23,18 +23,17 @@
 
 ## 2. What Is Left to Do in This Free Package
 
-### A. Extension Points for `filament-auto-transliterate-pro` (`v0.4.0`)
+### A. Extension Points for `filament-auto-transliterate-pro` (`v0.4.0` — Completed 2026-11-13)
 
-Before or alongside building the paid Pro add-on (`iabduul7/filament-auto-transliterate-pro`), add these lightweight, backwards-compatible extension hooks to the free core:
-
-1. **Runtime Provider Registration on `TranslationService`:**
-   - Add `TranslationService::extend(string $key, Closure|string $concrete): void` so `FilamentAutoTransliterateProServiceProvider` can register Pro providers (`gemini`, `openai`, `claude`, `deepl`) without requiring users to overwrite the entire `providers` array in `config/filament-auto-transliterate.php`.
-2. **Candidate List Payload Support in `TranslateController` & `translation-overlay.js`:**
-   - Currently `TranslateController` returns `{ translated: string }`.
-   - Allow `TranslationService` (when a Pro candidate resolver is bound) to optionally include `candidates: string[]` in the JSON response (`{ translated: "مرحبا", candidates: ["مرحبا", "مرحباً", "مرحب"] }`).
-   - Emit a cancelable `fat:before-apply` custom DOM event in `resources/js/translation-overlay.js` carrying `{ input, token, translated, candidates, apply(chosenText) }` so the Pro JS bundle can intercept it and display the Google-Input-Tools-style `1–5` floating candidate popover when enabled.
-3. **Field Extra-Attribute Passthrough for Companion Fields:**
-   - The `fat:applied` DOM event already dispatches `{ input, original, applied, targetLang, mode }`. Ensure `input` reference makes it trivial for Pro's `->transliterateInto('name_ar')` macro to locate the sibling Livewire/Filament input and update its state.
+1. **[DONE] Runtime Provider Registration on `TranslationService`:**
+   - Added `TranslationService::extend(string $key, Closure|string|TranslationProvider $concrete, array|TranslationMode|string|null $modes = null, string $position = 'after'): void`.
+2. **[DONE] Cache Lookup Hook, Hit Hook & Prune Protection:**
+   - Added `TranslationService::scopeCacheLookupUsing(?Closure $callback)` and `TranslationService::onCacheHit(?Closure $callback)`.
+   - Added `config('filament-auto-transliterate.protected_sources')` (default `['user_correction']`), respected by both `TranslationCache::prune()` and `TranslationCache::cacheTranslation()`.
+3. **[STRUCK — NOT NEEDED] Candidate List Payload on `/translate` & `fat:before-apply` Event:**
+   - *Decision (2026-11-13):* Struck. Free core's `/translate` runs only after a word is committed (Space/Enter/Tab/blur), whereas Pro's `->withCandidatePopover()` queries live candidates while typing via its own `POST /filament-auto-transliterate/candidates` endpoint. Keeping candidate popover logic in Pro avoids unused payload/event overhead in the free core.
+4. **[DONE] Field Extra-Attribute Passthrough for Companion Fields:**
+   - `fat:applied` DOM event and scalar `data-fat-*` attributes are live.
 
 ### B. Developer Experience & Testing Enhancements (Operation 90 W02 Backlog)
 

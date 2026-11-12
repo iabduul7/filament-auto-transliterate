@@ -157,8 +157,12 @@ return [
     'table_name' => 'translation_cache',
 
     // Age (days) after which `filament-auto-transliterate:prune` removes cached
-    // provider results (user corrections are never pruned). Null = keep forever.
+    // provider results (protected sources are never pruned). Null = keep forever.
     'cache_ttl_days' => env('FILAMENT_AUTO_TRANSLITERATE_CACHE_TTL_DAYS'),
+
+    // Sources that `filament-auto-transliterate:prune` and provider cache writes
+    // must never delete or overwrite.
+    'protected_sources' => ['user_correction'],
 
     /*
     | Map of provider key -> class. Add your own here (must implement the

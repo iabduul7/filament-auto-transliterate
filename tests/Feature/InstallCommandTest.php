@@ -41,5 +41,6 @@ it('ships the new security-related config keys with safe defaults', function () 
         ->and(config('filament-auto-transliterate.ops_endpoints.probe_providers'))->toBeFalse()
         ->and(config('filament-auto-transliterate.learn.max_original_length'))->toBe(200)
         ->and(config('filament-auto-transliterate.learn.throttle'))->toBe('20,1')
-        ->and(config('filament-auto-transliterate.cache_ttl_days'))->toBeNull();
+        ->and(config('filament-auto-transliterate.cache_ttl_days'))->toBeNull()
+        ->and(config('filament-auto-transliterate.protected_sources'))->toBe(['user_correction']);
 });

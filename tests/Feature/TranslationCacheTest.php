@@ -316,6 +316,24 @@ it('prunes only old non-correction rows', function () {
         ->and(TranslationCache::getTranslation('new-provider', 'ur', 'transliterate'))->not->toBeNull();
 });
 
+it('spares additional configured protected_sources from prune and provider overwrite', function () {
+    config(['filament-auto-transliterate.protected_sources' => ['user_correction', 'pinned']]);
+
+    fatInsertRaw('old-pinned', 'pinned', 'الرياض', now()->subDays(400)->toDateTimeString());
+    fatInsertRaw('old-provider', 'google_input_tools', 'رياض', now()->subDays(40)->toDateTimeString());
+
+    $deleted = TranslationCache::prune(30);
+
+    expect($deleted)->toBe(1)
+        ->and(TranslationCache::getTranslation('old-pinned', 'ur', 'transliterate')?->translated_text)->toBe('الرياض');
+
+    // A provider cache write must not overwrite a protected 'pinned' row either.
+    $row = TranslationCache::cacheTranslation('old-pinned', 'provider-attempt', 'ur', 'google_input_tools', 0.9, 1.0, 'transliterate');
+
+    expect($row->source)->toBe('pinned')
+        ->and($row->translated_text)->toBe('الرياض');
+});
+
 it('prunes through the artisan command with --days', function () {
     fatInsertRaw('old-provider', 'mymemory', 'x', now()->subDays(40)->toDateTimeString());
     fatInsertRaw('old-correction', 'user_correction', 'x', now()->subDays(40)->toDateTimeString());

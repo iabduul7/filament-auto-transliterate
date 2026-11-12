@@ -123,6 +123,7 @@ class TranslationCache extends Model
     ): self {
         $mode = static::resolveMode($mode);
         $isCorrection = $source === 'user_correction';
+        $isProtected = in_array($source, static::protectedSources(), true);
 
         $values = [
             'translated_text' => $translatedText,
@@ -135,7 +136,7 @@ class TranslationCache extends Model
             $values['user_id'] = $userId;
         }
 
-        if (self::updateExisting($originalText, $targetLang, $mode, $values, $isCorrection) > 0) {
+        if (self::updateExisting($originalText, $targetLang, $mode, $values, $isProtected) > 0) {
             return static::getTranslation($originalText, $targetLang, $mode)
                 ?? self::newInstanceFor($originalText, $targetLang, $mode, $values);
         }
@@ -162,7 +163,7 @@ class TranslationCache extends Model
             // (or the row exists with identical values, which some drivers
             // report as 0 affected rows). A correction must still win over a
             // provider result, so retry its update before re-reading.
-            if ($isCorrection) {
+            if ($isProtected) {
                 self::updateExisting($originalText, $targetLang, $mode, $values, true);
             }
 
@@ -192,25 +193,42 @@ class TranslationCache extends Model
     }
 
     /**
-     * Delete cached provider results created more than $days ago. Rows with
-     * source `user_correction` are never pruned. Uses only the created_at
+     * Delete cached provider results created more than $days ago. Rows whose
+     * `source` is listed in `config('filament-auto-transliterate.protected_sources')`
+     * (default `['user_correction']`) are never pruned. Uses only the created_at
      * index (no original_text access). Returns the number of rows removed.
      */
     public static function prune(int $days): int
     {
         return static::query()
-            ->where('source', '!=', 'user_correction')
+            ->whereNotIn('source', static::protectedSources())
             ->where('created_at', '<', now()->subDays(max(0, $days)))
             ->delete();
     }
 
     /**
-     * One conditional UPDATE against the existing row, if any. Non-corrections
-     * never match a row that is already a user correction.
+     * Sources protected from pruning and from being overwritten by provider
+     * cache writes. Always includes at least `user_correction` if misconfigured.
+     *
+     * @return list<string>
+     */
+    public static function protectedSources(): array
+    {
+        $configured = array_values(array_filter(
+            (array) config('filament-auto-transliterate.protected_sources', ['user_correction']),
+            static fn (mixed $s): bool => is_string($s) && $s !== '',
+        ));
+
+        return $configured !== [] ? $configured : ['user_correction'];
+    }
+
+    /**
+     * One conditional UPDATE against the existing row, if any. Non-protected
+     * writes never match a row whose source is protected.
      *
      * @param  array<string, mixed>  $values
      */
-    private static function updateExisting(string $originalText, string $targetLang, string $mode, array $values, bool $isCorrection): int
+    private static function updateExisting(string $originalText, string $targetLang, string $mode, array $values, bool $isProtected): int
     {
         $query = static::query()
             ->where('original_text_hash', hash('sha256', $originalText))
@@ -218,8 +236,8 @@ class TranslationCache extends Model
             ->where('mode', $mode)
             ->where('original_text', $originalText);
 
-        if (! $isCorrection) {
-            $query->where('source', '!=', 'user_correction');
+        if (! $isProtected) {
+            $query->whereNotIn('source', static::protectedSources());
         }
 
         return $query->update($values);
