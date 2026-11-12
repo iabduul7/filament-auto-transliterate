@@ -2,6 +2,7 @@
 
 namespace Iabduul7\FilamentAutoTransliterate\Models;
 
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
@@ -23,6 +24,13 @@ use Illuminate\Support\Facades\Schema;
  */
 class TranslationCache extends Model
 {
+    /**
+     * Optional callback to supply extra WHERE conditions and write attributes
+     * during `cacheTranslation()`, `getTranslation()`, and `stampCorrectionUser()`:
+     * `function (string $originalText, string $targetLang, string $mode, string $source): array{where?: array<string, mixed>, attributes?: array<string, mixed>}`
+     */
+    private static ?Closure $writeContextResolver = null;
+
     protected $table = 'translation_cache';
 
     protected $fillable = [
@@ -40,6 +48,16 @@ class TranslationCache extends Model
         'confidence' => 'decimal:2',
         'processing_time' => 'decimal:2',
     ];
+
+    /**
+     * Register a callback that supplies extra WHERE conditions (e.g. `tenant_id`)
+     * and write attributes (e.g. `is_approved`) for cache writes and lookups.
+     * Pass `null` to clear the hook.
+     */
+    public static function resolveWriteContextUsing(?Closure $callback): void
+    {
+        self::$writeContextResolver = $callback;
+    }
 
     public function getTable(): string
     {
@@ -82,15 +100,25 @@ class TranslationCache extends Model
      * Look up a cached conversion by original text + target language + mode.
      * Hash-first for index use, with an exact-text check to guard against
      * SHA-256 collisions. A null mode resolves to the configured default.
+     *
+     * @param  array<string, mixed>|null  $extraWhere
      */
-    public static function getTranslation(string $originalText, string $targetLang, ?string $mode = null): ?self
+    public static function getTranslation(string $originalText, string $targetLang, ?string $mode = null, ?array $extraWhere = null): ?self
     {
-        return static::query()
+        $resolvedMode = static::resolveMode($mode);
+        $where = $extraWhere ?? self::resolveWriteContext($originalText, $targetLang, $resolvedMode, '')['where'];
+
+        $query = static::query()
             ->where('original_text_hash', hash('sha256', $originalText))
             ->where('target_language', $targetLang)
-            ->where('mode', static::resolveMode($mode))
-            ->where('original_text', $originalText)
-            ->first();
+            ->where('mode', $resolvedMode)
+            ->where('original_text', $originalText);
+
+        foreach ($where as $column => $value) {
+            $query->where($column, $value);
+        }
+
+        return $query->first();
     }
 
     /**
@@ -124,29 +152,32 @@ class TranslationCache extends Model
         $mode = static::resolveMode($mode);
         $isCorrection = $source === 'user_correction';
         $isProtected = in_array($source, static::protectedSources(), true);
+        $context = self::resolveWriteContext($originalText, $targetLang, $mode, $source);
+        $extraWhere = $context['where'];
+        $extraAttributes = $context['attributes'];
 
-        $values = [
+        $values = array_merge([
             'translated_text' => $translatedText,
             'source' => $source,
             'confidence' => $confidence,
             'processing_time' => $processingTime,
-        ];
+        ], $extraAttributes);
 
         if ($isCorrection && self::hasUserIdColumn()) {
             $values['user_id'] = $userId;
         }
 
-        if (self::updateExisting($originalText, $targetLang, $mode, $values, $isProtected) > 0) {
-            return static::getTranslation($originalText, $targetLang, $mode)
-                ?? self::newInstanceFor($originalText, $targetLang, $mode, $values);
+        if (self::updateExisting($originalText, $targetLang, $mode, $values, $isProtected, $extraWhere) > 0) {
+            return static::getTranslation($originalText, $targetLang, $mode, $extraWhere)
+                ?? self::newInstanceFor($originalText, $targetLang, $mode, $extraWhere + $values);
         }
 
         try {
-            $insert = fn () => static::create([
+            $insert = fn () => static::unguarded(fn () => static::create([
                 'original_text' => $originalText,
                 'target_language' => $targetLang,
                 'mode' => $mode,
-            ] + $values);
+            ] + $extraWhere + $values));
 
             // Inside a caller's open transaction a unique violation would abort
             // it on Postgres ("current transaction is aborted"). A nested
@@ -164,11 +195,11 @@ class TranslationCache extends Model
             // report as 0 affected rows). A correction must still win over a
             // provider result, so retry its update before re-reading.
             if ($isProtected) {
-                self::updateExisting($originalText, $targetLang, $mode, $values, true);
+                self::updateExisting($originalText, $targetLang, $mode, $values, true, $extraWhere);
             }
 
-            return static::getTranslation($originalText, $targetLang, $mode)
-                ?? self::newInstanceFor($originalText, $targetLang, $mode, $values);
+            return static::getTranslation($originalText, $targetLang, $mode, $extraWhere)
+                ?? self::newInstanceFor($originalText, $targetLang, $mode, $extraWhere + $values);
         }
     }
 
@@ -183,13 +214,21 @@ class TranslationCache extends Model
             return 0;
         }
 
-        return static::query()
+        $resolvedMode = static::resolveMode($mode);
+        $extraWhere = self::resolveWriteContext($originalText, $targetLang, $resolvedMode, 'user_correction')['where'];
+
+        $query = static::query()
             ->where('original_text_hash', hash('sha256', $originalText))
             ->where('target_language', $targetLang)
-            ->where('mode', static::resolveMode($mode))
+            ->where('mode', $resolvedMode)
             ->where('original_text', $originalText)
-            ->where('source', 'user_correction')
-            ->update(['user_id' => $userId]);
+            ->where('source', 'user_correction');
+
+        foreach ($extraWhere as $column => $value) {
+            $query->where($column, $value);
+        }
+
+        return $query->update(['user_id' => $userId]);
     }
 
     /**
@@ -227,8 +266,9 @@ class TranslationCache extends Model
      * writes never match a row whose source is protected.
      *
      * @param  array<string, mixed>  $values
+     * @param  array<string, mixed>  $extraWhere
      */
-    private static function updateExisting(string $originalText, string $targetLang, string $mode, array $values, bool $isProtected): int
+    private static function updateExisting(string $originalText, string $targetLang, string $mode, array $values, bool $isProtected, array $extraWhere = []): int
     {
         $query = static::query()
             ->where('original_text_hash', hash('sha256', $originalText))
@@ -236,11 +276,36 @@ class TranslationCache extends Model
             ->where('mode', $mode)
             ->where('original_text', $originalText);
 
+        foreach ($extraWhere as $column => $value) {
+            $query->where($column, $value);
+        }
+
         if (! $isProtected) {
             $query->whereNotIn('source', static::protectedSources());
         }
 
-        return $query->update($values);
+        return $query->update($values + $extraWhere);
+    }
+
+    /**
+     * @return array{where: array<string, mixed>, attributes: array<string, mixed>}
+     */
+    private static function resolveWriteContext(string $originalText, string $targetLang, string $mode, string $source): array
+    {
+        if (self::$writeContextResolver === null) {
+            return ['where' => [], 'attributes' => []];
+        }
+
+        $context = (self::$writeContextResolver)($originalText, $targetLang, $mode, $source);
+
+        if (! is_array($context)) {
+            return ['where' => [], 'attributes' => []];
+        }
+
+        return [
+            'where' => isset($context['where']) && is_array($context['where']) ? $context['where'] : [],
+            'attributes' => isset($context['attributes']) && is_array($context['attributes']) ? $context['attributes'] : [],
+        ];
     }
 
     /**
@@ -248,11 +313,11 @@ class TranslationCache extends Model
      */
     private static function newInstanceFor(string $originalText, string $targetLang, string $mode, array $values): self
     {
-        return new self([
+        return static::unguarded(fn () => new self([
             'original_text' => $originalText,
             'target_language' => $targetLang,
             'mode' => $mode,
-        ] + $values);
+        ] + $values));
     }
 
     /**

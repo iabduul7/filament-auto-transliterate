@@ -115,6 +115,7 @@ class TranslationService
         self::$extendedProviders = [];
         self::$resolvedExtendedProviders = [];
         self::$extendedChains = [];
+        TranslationCache::resolveWriteContextUsing(null);
     }
 
     public function translate(string $text, ?string $targetLang = null, TranslationMode|string|null $mode = null): array
