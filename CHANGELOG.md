@@ -2,7 +2,7 @@
 
 All notable changes to `filament-auto-transliterate` will be documented in this file.
 
-## v0.4.0 - 2026-11-13
+## v0.4.0 - 2026-11-14
 
 ### Added
 
@@ -11,6 +11,7 @@ All notable changes to `filament-auto-transliterate` will be documented in this 
   - `TranslationService::onCacheHit(?Closure $callback)` fires whenever `translate()` resolves a cache hit (`function (TranslationCache $cached, string $text, string $targetLang, TranslationMode $mode): void`).
 - **Runtime provider registration (`TranslationService::extend()`):** register custom providers by class name, closure factory, or instance and optionally attach them `'before'` or `'after'` any mode's provider chain without mutating `config/filament-auto-transliterate.php`.
 - **`protected_sources` configuration:** `config('filament-auto-transliterate.protected_sources')` (defaults to `['user_correction']`) defines cache row sources that `TranslationCache::prune()` and non-protected provider cache writes must never delete or overwrite.
+- **Cache write context hook (`TranslationCache::resolveWriteContextUsing()`):** register a callback `function (string $originalText, string $targetLang, string $mode, string $source): array` returning `where` constraints (e.g. a tenant column, applied to `cacheTranslation()` matching and inserts, `getTranslation()` and `stampCorrectionUser()`) and extra write `attributes` (e.g. `is_approved`). `TranslationService::flushHooks()` clears it.
 
 ## v0.3.4 - 2026-11-07
 
