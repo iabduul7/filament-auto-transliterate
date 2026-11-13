@@ -77,7 +77,7 @@ it('treats HTTP 500, 429 and 401 as errors', function () {
 });
 
 it('treats a transport failure as an error', function () {
-    Http::fake(['*' => Http::failedConnection()]);
+    Http::fake(['*' => fakeFailedConnection()]);
 
     expect(microsoft()->translate('help', 'en', 'ur')->isError())->toBeTrue();
 });

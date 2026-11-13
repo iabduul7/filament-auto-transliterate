@@ -2,17 +2,122 @@
 
 namespace Iabduul7\FilamentAutoTransliterate\Services;
 
+use Closure;
 use Iabduul7\FilamentAutoTransliterate\Contracts\TranslationProvider;
 use Iabduul7\FilamentAutoTransliterate\Data\TranslationResult;
 use Iabduul7\FilamentAutoTransliterate\Enums\TranslationMode;
 use Iabduul7\FilamentAutoTransliterate\Exceptions\SanitizedException;
 use Iabduul7\FilamentAutoTransliterate\Models\TranslationCache;
 use Iabduul7\FilamentAutoTransliterate\Support\Languages;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class TranslationService
 {
+    /**
+     * Optional callback to scope or customize cache lookup queries:
+     * `function (Builder $query, string $text, string $targetLang, TranslationMode $mode): Builder|TranslationCache|false|null`
+     */
+    private static ?Closure $cacheLookupScope = null;
+
+    /**
+     * Optional callback invoked on every cache hit:
+     * `function (TranslationCache $cached, string $text, string $targetLang, TranslationMode $mode): void`
+     */
+    private static ?Closure $cacheHitCallback = null;
+
+    /**
+     * Providers registered at runtime via `TranslationService::extend()`.
+     *
+     * @var array<string, Closure|class-string<TranslationProvider>|TranslationProvider>
+     */
+    private static array $extendedProviders = [];
+
+    /**
+     * Resolved singleton instances for closure-based extended providers.
+     *
+     * @var array<string, TranslationProvider>
+     */
+    private static array $resolvedExtendedProviders = [];
+
+    /**
+     * Mode chain registrations added via `TranslationService::extend()`.
+     * Shape: `[modeValue => [providerKey => 'before'|'after']]`.
+     *
+     * @var array<string, array<string, 'before'|'after'>>
+     */
+    private static array $extendedChains = [];
+
+    /**
+     * Register a callback that scopes or customizes cache lookups in `getCached()`.
+     * Pass `null` to clear the hook.
+     */
+    public static function scopeCacheLookupUsing(?Closure $callback): void
+    {
+        self::$cacheLookupScope = $callback;
+    }
+
+    /**
+     * Register a callback fired whenever `translate()` resolves a cache hit.
+     * Pass `null` to clear the hook.
+     */
+    public static function onCacheHit(?Closure $callback): void
+    {
+        self::$cacheHitCallback = $callback;
+    }
+
+    /**
+     * Register a custom provider in code and optionally insert it into one or
+     * more mode chains (`'before'` or `'after'` the configured providers).
+     *
+     * @param  Closure|class-string<TranslationProvider>|TranslationProvider  $concrete
+     * @param  list<TranslationMode|string>|TranslationMode|string|null  $modes
+     */
+    public static function extend(
+        string $key,
+        Closure|string|TranslationProvider $concrete,
+        array|TranslationMode|string|null $modes = null,
+        string $position = 'after',
+    ): void {
+        self::$extendedProviders[$key] = $concrete;
+        unset(self::$resolvedExtendedProviders[$key]);
+
+        if (is_string($concrete) && class_exists($concrete)) {
+            app()->singletonIf($concrete);
+        }
+
+        if ($modes === null) {
+            return;
+        }
+
+        $normalizedPosition = $position === 'before' ? 'before' : 'after';
+        $modeList = is_array($modes) ? $modes : [$modes];
+
+        foreach ($modeList as $modeItem) {
+            $resolved = $modeItem instanceof TranslationMode
+                ? $modeItem
+                : (is_string($modeItem) ? TranslationMode::tryFrom($modeItem) : null);
+
+            if ($resolved !== null) {
+                self::$extendedChains[$resolved->value][$key] = $normalizedPosition;
+            }
+        }
+    }
+
+    /**
+     * Clear all runtime hooks and extended providers (primarily for testing).
+     */
+    public static function flushHooks(): void
+    {
+        self::$cacheLookupScope = null;
+        self::$cacheHitCallback = null;
+        self::$extendedProviders = [];
+        self::$resolvedExtendedProviders = [];
+        self::$extendedChains = [];
+        TranslationCache::resolveWriteContextUsing(null);
+    }
+
     public function translate(string $text, ?string $targetLang = null, TranslationMode|string|null $mode = null): array
     {
         // Defense-in-depth: the service is also a public API for host apps, so
@@ -44,6 +149,14 @@ class TranslationService
         // column for them), so a cache hit returns an empty alternatives list.
         if ($cached = $this->getCached($text, $targetLang, $mode)) {
             $this->debug("cache hit source={$cached->source}");
+
+            if (self::$cacheHitCallback !== null) {
+                try {
+                    (self::$cacheHitCallback)($cached, $text, $targetLang, $mode);
+                } catch (\Throwable $e) {
+                    $this->logException('cache hit callback failed', $e);
+                }
+            }
 
             return TranslationResult::success(
                 translated: $cached->translated_text,
@@ -207,15 +320,33 @@ class TranslationService
 
     /**
      * The ordered provider chain for a mode, resolved from that mode's OWN
-     * config list. The transliterate and translate chains are separate lists, so
-     * a provider listed only under `providers.translate` can never be invoked
-     * for a transliterate request.
+     * config list plus any providers registered for that mode via `extend()`.
+     * The transliterate and translate chains are separate lists, so a provider
+     * listed only under `providers.translate` can never be invoked for a
+     * transliterate request.
      *
      * @return list<TranslationProvider>
      */
     public function providersForMode(TranslationMode $mode): array
     {
-        $keys = (array) config($mode->providersConfigKey(), []);
+        $configuredKeys = array_values(array_filter(
+            (array) config($mode->providersConfigKey(), []),
+            static fn (mixed $k): bool => is_string($k) && $k !== '',
+        ));
+
+        $extendedForMode = self::$extendedChains[$mode->value] ?? [];
+        $beforeKeys = [];
+        $afterKeys = [];
+
+        foreach ($extendedForMode as $key => $position) {
+            if ($position === 'before') {
+                $beforeKeys[] = $key;
+            } else {
+                $afterKeys[] = $key;
+            }
+        }
+
+        $keys = array_values(array_unique(array_merge($beforeKeys, $configuredKeys, $afterKeys)));
 
         return array_values(array_filter(array_map(
             fn (string $key) => $this->resolveProvider($key),
@@ -223,8 +354,36 @@ class TranslationService
         )));
     }
 
-    private function resolveProvider(string $key): ?TranslationProvider
+    public function resolveProvider(string $key): ?TranslationProvider
     {
+        if (array_key_exists($key, self::$extendedProviders)) {
+            $concrete = self::$extendedProviders[$key];
+
+            if ($concrete instanceof TranslationProvider) {
+                return $concrete;
+            }
+
+            if ($concrete instanceof Closure) {
+                if (! isset(self::$resolvedExtendedProviders[$key])) {
+                    $resolved = $concrete(app());
+                    if (! $resolved instanceof TranslationProvider) {
+                        return null;
+                    }
+                    self::$resolvedExtendedProviders[$key] = $resolved;
+                }
+
+                return self::$resolvedExtendedProviders[$key];
+            }
+
+            if (class_exists($concrete)) {
+                $provider = app($concrete);
+
+                return $provider instanceof TranslationProvider ? $provider : null;
+            }
+
+            return null;
+        }
+
         $class = config("filament-auto-transliterate.provider_map.{$key}");
 
         if (! is_string($class) || ! class_exists($class)) {
@@ -239,9 +398,12 @@ class TranslationService
     /**
      * @return list<string>
      */
-    private function allProviderKeys(): array
+    public function allProviderKeys(): array
     {
-        return array_keys((array) config('filament-auto-transliterate.provider_map', []));
+        return array_values(array_unique(array_merge(
+            array_keys((array) config('filament-auto-transliterate.provider_map', [])),
+            array_keys(self::$extendedProviders),
+        )));
     }
 
     private function attempt(TranslationProvider $provider, string $text, string $sourceLang, string $targetLang): TranslationResult
@@ -261,12 +423,31 @@ class TranslationService
     private function getCached(string $text, string $targetLang, TranslationMode $mode): ?TranslationCache
     {
         try {
-            return TranslationCache::query()
+            $query = TranslationCache::query()
                 ->where('original_text_hash', hash('sha256', $text))
                 ->where('target_language', $targetLang)
                 ->where('mode', $mode->value)
-                ->where('original_text', $text) // guard against hash collisions
-                ->first();
+                ->where('original_text', $text); // guard against hash collisions
+
+            if (self::$cacheLookupScope !== null) {
+                $scoped = (self::$cacheLookupScope)($query, $text, $targetLang, $mode);
+
+                if ($scoped instanceof TranslationCache) {
+                    return $scoped;
+                }
+
+                if ($scoped === false) {
+                    return null;
+                }
+
+                if ($scoped instanceof Builder) {
+                    $query = $scoped;
+                }
+            }
+
+            $first = $query->first();
+
+            return $first instanceof TranslationCache ? $first : null;
         } catch (\Throwable $e) {
             $this->logException('cache read failed', $e);
 

@@ -74,7 +74,7 @@ it('treats HTTP 429 and 401 as errors', function () {
 
 it('treats a transport failure as an error and never leaks the key', function () {
     config(['filament-auto-transliterate.google_api_key' => 'secret-key']);
-    Http::fake(['*' => Http::failedConnection()]);
+    Http::fake(['*' => fakeFailedConnection()]);
 
     $result = googleTranslate()->translate('help', 'en', 'ur');
 

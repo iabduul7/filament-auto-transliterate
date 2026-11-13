@@ -188,11 +188,11 @@ class TranslationController extends Controller
             $live = $probe ? $this->translationService->providerStatus() : [];
 
             $providers = [];
-            foreach ((array) config('filament-auto-transliterate.provider_map', []) as $key => $class) {
-                $instance = is_string($class) && class_exists($class) ? app($class) : null;
+            foreach ($this->translationService->allProviderKeys() as $key) {
+                $instance = $this->translationService->resolveProvider((string) $key);
 
                 $entry = [
-                    'configured' => $instance !== null && method_exists($instance, 'isConfigured') && $instance->isConfigured(),
+                    'configured' => $instance !== null && $instance->isConfigured(),
                     'circuit_open' => $this->circuitOpen((string) $key),
                 ];
 

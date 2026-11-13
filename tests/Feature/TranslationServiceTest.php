@@ -32,6 +32,11 @@ class FatThrowingProvider implements TranslationProvider
 
 beforeEach(function () {
     Http::preventStrayRequests();
+    TranslationService::flushHooks();
+});
+
+afterEach(function () {
+    TranslationService::flushHooks();
 });
 
 function service(): TranslationService
@@ -343,7 +348,7 @@ it('opens the breaker after consecutive transport errors', function () {
         'filament-auto-transliterate.provider_failure_cooldown' => 120,
         'filament-auto-transliterate.providers.transliterate' => ['google_input_tools'],
     ]);
-    Http::fake(['inputtools.google.com/*' => Http::failedConnection()]);
+    Http::fake(['inputtools.google.com/*' => fakeFailedConnection()]);
 
     service()->translate('wordone', 'ur', 'transliterate');
     service()->translate('wordtwo', 'ur', 'transliterate');
@@ -574,4 +579,125 @@ it('does not flag a genuine miss as transient', function () {
         ->and($result)->not->toHaveKey('transient');
 
     @unlink($path);
+});
+
+it('scopes cache lookups via scopeCacheLookupUsing and falls through to providers when filtered out', function () {
+    TranslationCache::cacheTranslation('salam', 'سلام', 'ar', 'google_input_tools', 0.9, 1.0, 'transliterate');
+
+    Http::fake([
+        'inputtools.google.com/*' => Http::response(['SUCCESS', [['salam', ['سَلام']]]]),
+    ]);
+
+    TranslationService::scopeCacheLookupUsing(function ($query, string $text, string $targetLang, TranslationMode $mode) {
+        expect($text)->toBe('salam')
+            ->and($targetLang)->toBe('ar')
+            ->and($mode)->toBe(TranslationMode::Transliterate);
+
+        $query->where('source', 'pinned');
+    });
+
+    $result = service()->translate('salam', 'ar', 'transliterate');
+
+    expect($result['success'])->toBeTrue()
+        ->and($result['translated'])->toBe('سَلام')
+        ->and(Http::recorded())->toHaveCount(1);
+});
+
+it('allows scopeCacheLookupUsing to return a TranslationCache directly or false to veto', function () {
+    $custom = new TranslationCache([
+        'original_text' => 'riyadh',
+        'translated_text' => 'الرياض',
+        'target_language' => 'ar',
+        'mode' => 'transliterate',
+        'source' => 'pinned',
+        'confidence' => 1.0,
+    ]);
+
+    TranslationService::scopeCacheLookupUsing(fn () => $custom);
+
+    $hit = service()->translate('riyadh', 'ar', 'transliterate');
+
+    expect($hit['success'])->toBeTrue()
+        ->and($hit['translated'])->toBe('الرياض')
+        ->and($hit['source'])->toBe('pinned');
+
+    Http::fake([
+        'inputtools.google.com/*' => Http::response(['SUCCESS', [['riyadh', ['رياض']]]]),
+    ]);
+    TranslationService::scopeCacheLookupUsing(fn () => false);
+
+    $vetoed = service()->translate('riyadh', 'ar', 'transliterate');
+
+    expect($vetoed['translated'])->toBe('رياض')
+        ->and(Http::recorded())->toHaveCount(1);
+});
+
+it('fires onCacheHit callback on cache hits and catches callback exceptions safely', function () {
+    TranslationCache::cacheTranslation('dubai', 'دبي', 'ar', 'google_input_tools', 0.95, 1.0, 'transliterate');
+
+    $hits = [];
+    TranslationService::onCacheHit(function (TranslationCache $cached, string $text, string $targetLang, TranslationMode $mode) use (&$hits) {
+        $hits[] = [$cached->translated_text, $text, $targetLang, $mode->value];
+    });
+
+    $result = service()->translate('dubai', 'ar', 'transliterate');
+
+    expect($result['success'])->toBeTrue()
+        ->and($hits)->toBe([['دبي', 'dubai', 'ar', 'transliterate']]);
+
+    // A throwing hit callback must never break translate()
+    Exceptions::fake();
+    TranslationService::onCacheHit(function () {
+        throw new RuntimeException('hit hook error');
+    });
+
+    $stillWorks = service()->translate('dubai', 'ar', 'transliterate');
+    expect($stillWorks['success'])->toBeTrue()
+        ->and($stillWorks['translated'])->toBe('دبي');
+});
+
+it('registers custom providers and mode chain positions via TranslationService::extend()', function () {
+    $beforeProvider = new class implements TranslationProvider
+    {
+        public function key(): string
+        {
+            return 'pro_ai';
+        }
+
+        public function isConfigured(): bool
+        {
+            return true;
+        }
+
+        public function translate(string $text, string $sourceLang, string $targetLang): TranslationResult
+        {
+            return TranslationResult::success('عبدالرحمن', 'pro_ai', 0.98);
+        }
+    };
+
+    TranslationService::extend(
+        'pro_ai',
+        fn () => $beforeProvider,
+        modes: ['transliterate'],
+        position: 'before',
+    );
+
+    $chainKeys = array_map(
+        fn (TranslationProvider $p) => $p->key(),
+        service()->providersForMode(TranslationMode::Transliterate),
+    );
+    $translateKeys = array_map(
+        fn (TranslationProvider $p) => $p->key(),
+        service()->providersForMode(TranslationMode::Translate),
+    );
+
+    expect($chainKeys[0])->toBe('pro_ai')
+        ->and($translateKeys)->not->toContain('pro_ai')
+        ->and(service()->allProviderKeys())->toContain('pro_ai');
+
+    $result = service()->translate('abdulrahman', 'ar', 'transliterate');
+
+    expect($result['success'])->toBeTrue()
+        ->and($result['source'])->toBe('pro_ai')
+        ->and($result['translated'])->toBe('عبدالرحمن');
 });

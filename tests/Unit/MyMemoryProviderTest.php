@@ -80,7 +80,7 @@ it('treats a body-level 429 as an error', function () {
 });
 
 it('treats a transport failure as an error, not an exception', function () {
-    Http::fake(['*' => Http::failedConnection()]);
+    Http::fake(['*' => fakeFailedConnection()]);
 
     $result = myMemory()->translate('help', 'en', 'ur');
 
